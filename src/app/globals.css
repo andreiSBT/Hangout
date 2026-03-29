@@ -23,6 +23,20 @@ body {
   color: var(--color-foreground);
 }
 
+.dark {
+  --color-background: #0c0a09;
+  --color-foreground: #fafaf9;
+  --color-primary: #fb923c;
+  --color-primary-dark: #f97316;
+  --color-primary-light: #1c1206;
+  --color-secondary: #a78bfa;
+  --color-secondary-light: #1a1625;
+  --color-surface: #1c1917;
+  --color-surface-hover: #292524;
+  --color-muted: #a8a29e;
+  --color-border: #292524;
+}
+
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
