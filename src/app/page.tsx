@@ -93,20 +93,26 @@ export default function Home() {
     setDark(savedDark);
     if (savedDark) document.documentElement.classList.add("dark");
 
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       setUser(data.user);
-      if (data.user) fetchUsername(data.user.id);
+      let uname: string | null = null;
+      if (data.user) uname = await fetchUsername(data.user.id);
+      fetchActivities(uname);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         setUser(session?.user ?? null);
-        if (session?.user) fetchUsername(session.user.id);
-        else setUsername(null);
+        let uname: string | null = null;
+        if (session?.user) {
+          uname = await fetchUsername(session.user.id);
+        } else {
+          setUsername(null);
+        }
+        fetchActivities(uname);
       }
     );
 
-    fetchActivities();
     return () => listener.subscription.unsubscribe();
   }, []);
 
@@ -123,11 +129,16 @@ export default function Home() {
       .select("username")
       .eq("id", userId)
       .single();
-    if (data) setUsername(data.username);
+    if (data) {
+      setUsername(data.username);
+      return data.username;
+    }
+    return null;
   }
 
-  async function fetchActivities() {
+  async function fetchActivities(uname?: string | null) {
     setLoading(true);
+    const currentUsername = uname ?? username;
     const { data: acts } = await supabase
       .from("hangout_activities")
       .select("*")
@@ -138,13 +149,16 @@ export default function Home() {
       setActivities(acts);
       const { data: parts } = await supabase
         .from("hangout_participants")
-        .select("activity_id");
+        .select("activity_id, name");
       if (parts) {
         const counts: Record<string, number> = {};
-        (parts as Participant[]).forEach((p) => {
+        const myJoined = new Set<string>();
+        (parts as { activity_id: string; name: string }[]).forEach((p) => {
           counts[p.activity_id] = (counts[p.activity_id] || 0) + 1;
+          if (currentUsername && p.name === currentUsername) myJoined.add(p.activity_id);
         });
         setParticipantCounts(counts);
+        setJoinedIds(myJoined);
       }
     }
     setLoading(false);
@@ -208,6 +222,27 @@ export default function Home() {
         [activityId]: (prev[activityId] || 0) + 1,
       }));
       setToast("Te-ai alăturat!");
+    }
+  }
+
+  async function handleLeave(activityId: string) {
+    if (!username) return;
+    const { error } = await supabase
+      .from("hangout_participants")
+      .delete()
+      .eq("activity_id", activityId)
+      .eq("name", username);
+    if (!error) {
+      setJoinedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(activityId);
+        return next;
+      });
+      setParticipantCounts((prev) => ({
+        ...prev,
+        [activityId]: Math.max((prev[activityId] || 1) - 1, 0),
+      }));
+      setToast("Ai părăsit activitatea.");
     }
   }
 
@@ -525,12 +560,22 @@ export default function Home() {
                       </div>
 
                       {joined ? (
-                        <span className="px-3 py-1.5 rounded-full text-xs font-semibold text-success bg-success/10 flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLeave(activity.id);
+                          }}
+                          className="px-3 py-1.5 rounded-full text-xs font-semibold text-success bg-success/10 hover:text-danger hover:bg-danger-light transition-all active:scale-95 flex items-center gap-1 group/leave"
+                        >
+                          <svg className="w-3 h-3 group-hover/leave:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
-                          Participi
-                        </span>
+                          <svg className="w-3 h-3 hidden group-hover/leave:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          <span className="group-hover/leave:hidden">Participi</span>
+                          <span className="hidden group-hover/leave:inline">Părăsește</span>
+                        </button>
                       ) : isFull ? (
                         <span className="px-3 py-1.5 rounded-full text-xs font-semibold text-muted bg-background">
                           Complet

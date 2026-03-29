@@ -84,12 +84,29 @@ export default function ActivityPage() {
 
   async function handleJoin() {
     if (!user || !username) return;
+    // Prevent duplicate join
+    const already = participants.some((p) => p.name === username);
+    if (already) return;
     const { error } = await supabase
       .from("hangout_participants")
       .insert([{ activity_id: id, name: username }]);
     if (!error) {
       setJoined(true);
       setToast("Te-ai alăturat!");
+      fetchAll();
+    }
+  }
+
+  async function handleLeave() {
+    if (!username) return;
+    const { error } = await supabase
+      .from("hangout_participants")
+      .delete()
+      .eq("activity_id", id)
+      .eq("name", username);
+    if (!error) {
+      setJoined(false);
+      setToast("Ai părăsit activitatea.");
       fetchAll();
     }
   }
@@ -294,11 +311,19 @@ export default function ActivityPage() {
 
           {/* Join button */}
           {alreadyJoined ? (
-            <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-success/10 text-success font-semibold text-sm">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              Participi la această activitate
+            <div className="flex items-center gap-3">
+              <div className="flex-1 flex items-center gap-2 px-5 py-3 rounded-xl bg-success/10 text-success font-semibold text-sm">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Participi la această activitate
+              </div>
+              <button
+                onClick={handleLeave}
+                className="px-4 py-3 rounded-xl border border-border text-sm font-medium text-muted hover:text-danger hover:border-danger/30 hover:bg-danger-light transition-all active:scale-95"
+              >
+                Părăsește
+              </button>
             </div>
           ) : isFull ? (
             <div className="px-5 py-3 rounded-xl bg-background text-muted font-semibold text-sm text-center">
