@@ -74,11 +74,18 @@ export default function Home() {
     description: "",
     category: "sport",
     location: "",
-    date: "",
     max_people: 10,
     min_age: 10,
     max_age: 99,
     created_by: "",
+  });
+
+  const [dateFields, setDateFields] = useState({
+    day: "",
+    month: "",
+    year: "",
+    hour: "",
+    minute: "",
   });
 
   useEffect(() => {
@@ -146,19 +153,23 @@ export default function Home() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const { error } = await supabase.from("hangout_activities").insert([form]);
+    const { day, month, year, hour, minute } = dateFields;
+    const dateStr = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:00`;
+    const { error } = await supabase
+      .from("hangout_activities")
+      .insert([{ ...form, date: dateStr }]);
     if (!error) {
       setForm({
         title: "",
         description: "",
         category: "sport",
         location: "",
-        date: "",
         max_people: 10,
         min_age: 10,
         max_age: 99,
         created_by: "",
       });
+      setDateFields({ day: "", month: "", year: "", hour: "", minute: "" });
       setShowForm(false);
       fetchActivities();
     }
@@ -590,17 +601,77 @@ export default function Home() {
 
               <div>
                 <label className="block text-sm font-medium mb-1.5">
-                  Când?
+                  Data
                 </label>
-                <input
-                  type="datetime-local"
-                  required
-                  value={form.date}
-                  onChange={(e) =>
-                    setForm({ ...form, date: e.target.value })
-                  }
-                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
+                <div className="grid grid-cols-3 gap-2">
+                  <select
+                    required
+                    value={dateFields.day}
+                    onChange={(e) => setDateFields({ ...dateFields, day: e.target.value })}
+                    className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  >
+                    <option value="">Zi</option>
+                    {Array.from({ length: 31 }, (_, i) => (
+                      <option key={i + 1} value={String(i + 1)}>{i + 1}</option>
+                    ))}
+                  </select>
+                  <select
+                    required
+                    value={dateFields.month}
+                    onChange={(e) => setDateFields({ ...dateFields, month: e.target.value })}
+                    className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  >
+                    <option value="">Luna</option>
+                    {["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => (
+                      <option key={i + 1} value={String(i + 1)}>{m}</option>
+                    ))}
+                  </select>
+                  <select
+                    required
+                    value={dateFields.year}
+                    onChange={(e) => setDateFields({ ...dateFields, year: e.target.value })}
+                    className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  >
+                    <option value="">An</option>
+                    {[2026, 2027].map((y) => (
+                      <option key={y} value={String(y)}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  Ora
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    required
+                    value={dateFields.hour}
+                    onChange={(e) => setDateFields({ ...dateFields, hour: e.target.value })}
+                    className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  >
+                    <option value="">Ora</option>
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={String(i)}>
+                        {String(i).padStart(2, "0")}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    required
+                    value={dateFields.minute}
+                    onChange={(e) => setDateFields({ ...dateFields, minute: e.target.value })}
+                    className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  >
+                    <option value="">Min</option>
+                    {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
+                      <option key={m} value={String(m)}>
+                        {String(m).padStart(2, "0")}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <button
