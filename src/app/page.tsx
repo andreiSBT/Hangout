@@ -11,6 +11,8 @@ type Activity = {
   location: string;
   date: string;
   max_people: number;
+  min_age: number;
+  max_age: number;
   created_by: string;
   created_at: string;
 };
@@ -45,8 +47,9 @@ function formatDate(dateStr: string) {
   if (days < 7) return `În ${days} zile`;
 
   return date.toLocaleDateString("ro-RO", {
-    day: "numeric",
-    month: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -70,6 +73,8 @@ export default function Home() {
     location: "",
     date: "",
     max_people: 10,
+    min_age: 10,
+    max_age: 99,
     created_by: "",
   });
 
@@ -114,6 +119,8 @@ export default function Home() {
         location: "",
         date: "",
         max_people: 10,
+        min_age: 10,
+        max_age: 99,
         created_by: "",
       });
       setShowForm(false);
@@ -263,12 +270,20 @@ export default function Home() {
                     </p>
                   )}
 
-                  <div className="flex items-center gap-1.5 text-sm text-muted mb-4">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    {activity.location}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted mb-4">
+                    <span className="inline-flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {activity.location}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      {activity.min_age}–{activity.max_age} ani
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-border">
@@ -425,6 +440,41 @@ export default function Home() {
                         ...form,
                         max_people: parseInt(e.target.value),
                       })
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">
+                    Vârstă minimă
+                  </label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={99}
+                    required
+                    value={form.min_age}
+                    onChange={(e) =>
+                      setForm({ ...form, min_age: parseInt(e.target.value) })
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">
+                    Vârstă maximă
+                  </label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={99}
+                    required
+                    value={form.max_age}
+                    onChange={(e) =>
+                      setForm({ ...form, max_age: parseInt(e.target.value) })
                     }
                     className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
