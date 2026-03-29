@@ -66,7 +66,6 @@ export default function Home() {
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
-  const [dark, setDark] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const [form, setForm] = useState({
@@ -89,9 +88,9 @@ export default function Home() {
   });
 
   useEffect(() => {
-    const savedDark = localStorage.getItem("hangout-dark") === "true";
-    setDark(savedDark);
-    if (savedDark) document.documentElement.classList.add("dark");
+    if (localStorage.getItem("hangout-dark") === "true") {
+      document.documentElement.classList.add("dark");
+    }
 
     let initialLoad = true;
 
@@ -119,13 +118,6 @@ export default function Home() {
 
     return () => listener.subscription.unsubscribe();
   }, []);
-
-  function toggleDark() {
-    const next = !dark;
-    setDark(next);
-    localStorage.setItem("hangout-dark", String(next));
-    document.documentElement.classList.toggle("dark", next);
-  }
 
   async function fetchUsername(userId: string) {
     const { data } = await supabase
@@ -265,13 +257,6 @@ export default function Home() {
     setDeleteId(null);
   }
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    setUser(null);
-    setUsername(null);
-    setToast("Ai ieșit din cont.");
-  }
-
   const clearToast = useCallback(() => setToast(null), []);
 
   const filtered = activities
@@ -298,22 +283,6 @@ export default function Home() {
             <span className="text-xl font-bold tracking-tight hidden sm:block">Hangout</span>
           </button>
           <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={toggleDark}
-              className="w-9 h-9 rounded-full bg-background border border-border flex items-center justify-center text-muted hover:text-foreground hover:border-foreground/20 transition-all active:scale-90"
-              title={dark ? "Light mode" : "Dark mode"}
-            >
-              {dark ? (
-                <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              ) : (
-                <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-              )}
-            </button>
-
             {user ? (
               <>
                 <button
@@ -322,12 +291,6 @@ export default function Home() {
                   title="Profilul meu"
                 >
                   {username?.[0]?.toUpperCase() ?? "?"}
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-1.5 text-sm text-muted hover:text-foreground transition-colors hidden sm:block"
-                >
-                  Ieși
                 </button>
               </>
             ) : (

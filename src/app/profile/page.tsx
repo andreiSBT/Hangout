@@ -1,10 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Activity, getCategoryInfo, formatDate } from "@/lib/shared";
 import type { User } from "@supabase/supabase-js";
+
+function Toast({ message, onDone }: { message: string; onDone: () => void }) {
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    const t1 = setTimeout(() => setLeaving(true), 2200);
+    const t2 = setTimeout(onDone, 2500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [onDone]);
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100]">
+      <div className={`px-5 py-3 rounded-2xl bg-foreground text-background text-sm font-medium shadow-2xl ${leaving ? "animate-toast-out" : "animate-toast-in"}`}>
+        {message}
+      </div>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -12,10 +28,21 @@ export default function ProfilePage() {
   const [username, setUsername] = useState<string | null>(null);
   const [myActivities, setMyActivities] = useState<Activity[]>([]);
   const [joinedActivities, setJoinedActivities] = useState<Activity[]>([]);
-  const [tab, setTab] = useState<"created" | "joined">("created");
+  const [tab, setTab] = useState<"created" | "joined" | "settings">("created");
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
+  const clearToast = useCallback(() => setToast(null), []);
+
+  // Settings state
+  const [dark, setDark] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
+    setDark(document.documentElement.classList.contains("dark"));
+
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) {
         router.push("/");
@@ -61,6 +88,45 @@ export default function ProfilePage() {
     setLoading(false);
   }
 
+  function toggleDark() {
+    const next = !dark;
+    setDark(next);
+    localStorage.setItem("hangout-dark", String(next));
+    document.documentElement.classList.toggle("dark", next);
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPasswordError("");
+
+    if (newPassword.length < 6) {
+      setPasswordError("Parola trebuie să aibă minim 6 caractere.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Parolele nu se potrivesc.");
+      return;
+    }
+
+    setChangingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setChangingPassword(false);
+
+    if (error) {
+      setPasswordError(error.message);
+      return;
+    }
+
+    setNewPassword("");
+    setConfirmPassword("");
+    setToast("Parola a fost schimbată!");
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/");
+  }
+
   const activities = tab === "created" ? myActivities : joinedActivities;
 
   if (loading) {
@@ -104,36 +170,27 @@ export default function ProfilePage() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         {/* Profile Header */}
         <div className="relative bg-surface rounded-2xl border border-border overflow-hidden mb-6 animate-fade-in">
-          {/* Gradient banner */}
           <div className="h-24 bg-gradient-to-r from-primary via-secondary to-primary" />
-
           <div className="px-4 sm:px-8 pb-5 sm:pb-6">
-            {/* Avatar */}
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-2xl sm:text-3xl font-bold -mt-8 sm:-mt-10 ring-4 ring-surface shadow-xl">
               {username?.[0]?.toUpperCase() ?? "?"}
             </div>
-
             <div className="mt-4">
               <h1 className="text-xl sm:text-2xl font-extrabold">{username}</h1>
               <p className="text-sm text-muted mt-0.5">{user?.email}</p>
             </div>
-
             <div className="flex gap-4 sm:gap-6 mt-4 sm:mt-5">
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center">
                   <span className="text-lg font-bold text-primary">{myActivities.length}</span>
                 </div>
-                <div className="text-xs text-muted leading-tight">
-                  Activități<br />create
-                </div>
+                <div className="text-xs text-muted leading-tight">Activități<br />create</div>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-xl bg-secondary-light flex items-center justify-center">
                   <span className="text-lg font-bold text-secondary">{joinedActivities.length}</span>
                 </div>
-                <div className="text-xs text-muted leading-tight">
-                  Activități<br />participări
-                </div>
+                <div className="text-xs text-muted leading-tight">Activități<br />participări</div>
               </div>
             </div>
           </div>
@@ -141,90 +198,197 @@ export default function ProfilePage() {
 
         {/* Tabs */}
         <div className="flex gap-1 p-1 bg-surface rounded-xl border border-border mb-6">
-          <button
-            onClick={() => setTab("created")}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all active:scale-95 ${
-              tab === "created"
-                ? "bg-foreground text-background shadow-sm"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            Activitățile mele
-          </button>
-          <button
-            onClick={() => setTab("joined")}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all active:scale-95 ${
-              tab === "joined"
-                ? "bg-foreground text-background shadow-sm"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            Participări
-          </button>
+          {(["created", "joined", "settings"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`flex-1 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all active:scale-95 ${
+                tab === t
+                  ? "bg-foreground text-background shadow-sm"
+                  : "text-muted hover:text-foreground"
+              }`}
+            >
+              {t === "created" ? "Activități" : t === "joined" ? "Participări" : "Setări"}
+            </button>
+          ))}
         </div>
 
-        {/* Activities */}
-        {activities.length === 0 ? (
-          <div className="text-center py-16 animate-fade-in">
-            <div className="text-5xl mb-4">
-              {tab === "created" ? "📝" : "🎉"}
+        {/* Settings Tab */}
+        {tab === "settings" ? (
+          <div className="space-y-4 animate-fade-in">
+            {/* Account Info */}
+            <div className="bg-surface rounded-2xl border border-border p-5 sm:p-6">
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Cont</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs text-muted mb-0.5">Username</div>
+                    <div className="font-semibold">{username}</div>
+                  </div>
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold">
+                    {username?.[0]?.toUpperCase() ?? "?"}
+                  </div>
+                </div>
+                <div className="border-t border-border" />
+                <div>
+                  <div className="text-xs text-muted mb-0.5">Email</div>
+                  <div className="font-semibold">{user?.email}</div>
+                </div>
+              </div>
             </div>
-            <h3 className="text-xl font-bold mb-2">
-              {tab === "created"
-                ? "Nu ai propus nicio activitate"
-                : "Nu ai participat la nimic încă"}
-            </h3>
-            <p className="text-muted mb-6 max-w-sm mx-auto">
-              {tab === "created"
-                ? "Propune prima ta activitate și invită-ți prietenii!"
-                : "Explorează activitățile disponibile și alătură-te!"}
-            </p>
+
+            {/* Appearance */}
+            <div className="bg-surface rounded-2xl border border-border p-5 sm:p-6">
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Aspect</h2>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center">
+                    {dark ? (
+                      <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold">Mod întunecat</div>
+                    <div className="text-xs text-muted">{dark ? "Activat" : "Dezactivat"}</div>
+                  </div>
+                </div>
+                <button
+                  onClick={toggleDark}
+                  className={`relative w-12 h-7 rounded-full transition-colors ${dark ? "bg-primary" : "bg-border"}`}
+                >
+                  <div className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${dark ? "translate-x-5" : "translate-x-0.5"}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Change Password */}
+            <div className="bg-surface rounded-2xl border border-border p-5 sm:p-6">
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Schimbă parola</h2>
+              <form onSubmit={handleChangePassword} className="space-y-3">
+                <div>
+                  <label className="block text-xs text-muted mb-1.5">Parolă nouă</label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    placeholder="Minim 6 caractere"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted mb-1.5">Confirmă parola</label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    placeholder="Repetă parola"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </div>
+                {passwordError && (
+                  <div className="flex items-start gap-2 text-sm text-danger bg-danger-light px-4 py-2.5 rounded-xl">
+                    <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    {passwordError}
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  disabled={changingPassword}
+                  className="w-full py-2.5 bg-foreground text-background rounded-xl text-sm font-semibold hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50"
+                >
+                  {changingPassword ? "Se schimbă..." : "Schimbă parola"}
+                </button>
+              </form>
+            </div>
+
+            {/* Logout */}
             <button
-              onClick={() => router.push("/")}
-              className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-full font-semibold hover:shadow-lg transition-all active:scale-95"
+              onClick={handleLogout}
+              className="w-full py-3 bg-surface rounded-2xl border border-border text-danger text-sm font-semibold hover:bg-danger-light transition-all active:scale-[0.98]"
             >
-              {tab === "created" ? "Propune o activitate" : "Explorează activități"}
+              Ieși din cont
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
-            {activities.map((activity, i) => {
-              const cat = getCategoryInfo(activity.category);
-              const isPast = new Date(activity.date) < new Date();
-
-              return (
+          <>
+            {/* Activities */}
+            {activities.length === 0 ? (
+              <div className="text-center py-16 animate-fade-in">
+                <div className="text-5xl mb-4">
+                  {tab === "created" ? "📝" : "🎉"}
+                </div>
+                <h3 className="text-xl font-bold mb-2">
+                  {tab === "created"
+                    ? "Nu ai propus nicio activitate"
+                    : "Nu ai participat la nimic încă"}
+                </h3>
+                <p className="text-muted mb-6 max-w-sm mx-auto">
+                  {tab === "created"
+                    ? "Propune prima ta activitate și invită-ți prietenii!"
+                    : "Explorează activitățile disponibile și alătură-te!"}
+                </p>
                 <button
-                  key={activity.id}
-                  onClick={() => router.push(`/activity/${activity.id}`)}
-                  className={`w-full text-left bg-surface rounded-xl border border-border p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-slide-up group ${
-                    isPast ? "opacity-50" : ""
-                  }`}
-                  style={{ animationDelay: `${i * 50}ms` }}
+                  onClick={() => router.push("/")}
+                  className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-full font-semibold hover:shadow-lg transition-all active:scale-95"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-background rounded-lg text-xs font-medium text-muted">
-                      {cat.icon} {cat.label}
-                    </span>
-                    <span className={`text-xs font-medium ${isPast ? "text-muted" : "text-primary"}`}>
-                      {isPast ? "Trecut" : formatDate(activity.date)}
-                    </span>
-                  </div>
-                  <h3 className="font-bold group-hover:text-primary transition-colors">
-                    {activity.title}
-                  </h3>
-                  <div className="flex items-center gap-1.5 text-sm text-muted mt-1">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    {activity.location}
-                  </div>
+                  {tab === "created" ? "Propune o activitate" : "Explorează activități"}
                 </button>
-              );
-            })}
-          </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activities.map((activity, i) => {
+                  const cat = getCategoryInfo(activity.category);
+                  const isPast = new Date(activity.date) < new Date();
+
+                  return (
+                    <button
+                      key={activity.id}
+                      onClick={() => router.push(`/activity/${activity.id}`)}
+                      className={`w-full text-left bg-surface rounded-xl border border-border p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-slide-up group ${
+                        isPast ? "opacity-50" : ""
+                      }`}
+                      style={{ animationDelay: `${i * 50}ms` }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-background rounded-lg text-xs font-medium text-muted">
+                          {cat.icon} {cat.label}
+                        </span>
+                        <span className={`text-xs font-medium ${isPast ? "text-muted" : "text-primary"}`}>
+                          {isPast ? "Trecut" : formatDate(activity.date)}
+                        </span>
+                      </div>
+                      <h3 className="font-bold group-hover:text-primary transition-colors">
+                        {activity.title}
+                      </h3>
+                      <div className="flex items-center gap-1.5 text-sm text-muted mt-1">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {activity.location}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </main>
+
+      {toast && <Toast message={toast} onDone={clearToast} />}
     </div>
   );
 }
