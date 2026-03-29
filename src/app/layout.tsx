@@ -37,6 +37,11 @@ export default function RootLayout({
     <html lang="ro" className={`${geistSans.variable} h-full antialiased`}>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem("hangout-dark")==="true")document.documentElement.classList.add("dark")}catch(e){}`,
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col font-sans">
         {children}

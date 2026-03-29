@@ -92,10 +92,6 @@ export default function Home() {
   });
 
   useEffect(() => {
-    if (localStorage.getItem("hangout-dark") === "true") {
-      document.documentElement.classList.add("dark");
-    }
-
     let ignoreFirstEvent = true;
 
     supabase.auth.getUser().then(async ({ data }) => {
