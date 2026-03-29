@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import AuthModal from "@/components/AuthModal";
+import type { User } from "@supabase/supabase-js";
 
 type Activity = {
   id: string;
@@ -46,13 +48,12 @@ function formatDate(dateStr: string) {
   if (days === 1) return "Mâine";
   if (days < 7) return `În ${days} zile`;
 
-  return date.toLocaleDateString("ro-RO", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  const hh = String(date.getHours()).padStart(2, "0");
+  const min = String(date.getMinutes()).padStart(2, "0");
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 }
 
 export default function Home() {
@@ -61,11 +62,13 @@ export default function Home() {
     Record<string, number>
   >({});
   const [showForm, setShowForm] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string | null>(null);
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
+  const [user, setUser] = useState<User | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
 
-  // Form state
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -79,8 +82,32 @@ export default function Home() {
   });
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+      if (data.user) fetchUsername(data.user.id);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+        if (session?.user) fetchUsername(session.user.id);
+        else setUsername(null);
+      }
+    );
+
     fetchActivities();
+
+    return () => listener.subscription.unsubscribe();
   }, []);
+
+  async function fetchUsername(userId: string) {
+    const { data } = await supabase
+      .from("hangout_profiles")
+      .select("username")
+      .eq("id", userId)
+      .single();
+    if (data) setUsername(data.username);
+  }
 
   async function fetchActivities() {
     setLoading(true);
@@ -108,6 +135,15 @@ export default function Home() {
     setLoading(false);
   }
 
+  function handlePropune() {
+    if (!user) {
+      setShowAuth(true);
+      return;
+    }
+    setForm((prev) => ({ ...prev, created_by: username ?? "" }));
+    setShowForm(true);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const { error } = await supabase.from("hangout_activities").insert([form]);
@@ -129,9 +165,12 @@ export default function Home() {
   }
 
   async function handleJoin(activityId: string) {
-    const name = prompt("Cum te cheamă?");
-    if (!name) return;
+    if (!user) {
+      setShowAuth(true);
+      return;
+    }
 
+    const name = username ?? "Anonim";
     const { error } = await supabase
       .from("hangout_participants")
       .insert([{ activity_id: activityId, name }]);
@@ -143,6 +182,16 @@ export default function Home() {
         [activityId]: (prev[activityId] || 0) + 1,
       }));
     }
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    setUser(null);
+    setUsername(null);
+  }
+
+  function handleAuthSuccess() {
+    setShowAuth(false);
   }
 
   const filtered = filter
@@ -160,21 +209,50 @@ export default function Home() {
             </div>
             <span className="text-xl font-bold tracking-tight">Hangout</span>
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-primary text-white rounded-full text-sm font-semibold hover:bg-primary-dark transition-all hover:shadow-lg hover:shadow-primary/25 active:scale-95"
-          >
-            + Propune
-          </button>
+          <div className="flex items-center gap-3">
+            {user ? (
+              <>
+                <span className="text-sm font-medium text-muted hidden sm:block">
+                  {username}
+                </span>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold">
+                  {username?.[0]?.toUpperCase() ?? "?"}
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1.5 text-sm text-muted hover:text-foreground transition-colors"
+                >
+                  Ieși
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setShowAuth(true)}
+                className="px-4 py-2 border border-border rounded-full text-sm font-medium hover:bg-surface-hover transition-all"
+              >
+                Intră în cont
+              </button>
+            )}
+            <button
+              onClick={handlePropune}
+              className="px-4 py-2 bg-primary text-white rounded-full text-sm font-semibold hover:bg-primary-dark transition-all hover:shadow-lg hover:shadow-primary/25 active:scale-95"
+            >
+              + Propune
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-b from-primary-light to-background pt-16 pb-20 px-4 sm:px-6">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
-          backgroundSize: "32px 32px",
-        }} />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
+            backgroundSize: "32px 32px",
+          }}
+        />
         <div className="max-w-5xl mx-auto text-center relative">
           <h1 className="animate-fade-in text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
             Ieși din casă.{" "}
@@ -183,8 +261,8 @@ export default function Home() {
             </span>
           </h1>
           <p className="animate-slide-up mt-5 text-lg sm:text-xl text-muted max-w-2xl mx-auto leading-relaxed">
-            Propune o activitate, găsește oameni din zona ta și
-            socializează în viața reală — nu doar online.
+            Propune o activitate, găsește oameni din zona ta și socializează în
+            viața reală — nu doar online.
           </p>
           <div className="animate-slide-up mt-8 flex flex-wrap justify-center gap-2">
             <button
@@ -232,7 +310,7 @@ export default function Home() {
               Fii primul care propune ceva! Lumea așteaptă.
             </p>
             <button
-              onClick={() => setShowForm(true)}
+              onClick={handlePropune}
               className="px-6 py-3 bg-primary text-white rounded-full font-semibold hover:bg-primary-dark transition-all hover:shadow-lg hover:shadow-primary/25"
             >
               Propune o activitate
@@ -272,15 +350,39 @@ export default function Home() {
 
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted mb-4">
                     <span className="inline-flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
                       </svg>
                       {activity.location}
                     </span>
                     <span className="inline-flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
                       </svg>
                       {activity.min_age}–{activity.max_age} ani
                     </span>
@@ -333,6 +435,11 @@ export default function Home() {
           Făcut cu drag pentru o lume mai conectată.
         </div>
       </footer>
+
+      {/* Auth Modal */}
+      {showAuth && (
+        <AuthModal onClose={() => setShowAuth(false)} onAuth={handleAuthSuccess} />
+      )}
 
       {/* Create Activity Modal */}
       {showForm && (
@@ -481,36 +588,19 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">
-                    Când?
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={form.date}
-                    onChange={(e) =>
-                      setForm({ ...form, date: e.target.value })
-                    }
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">
-                    Numele tău
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="ex: Andrei"
-                    value={form.created_by}
-                    onChange={(e) =>
-                      setForm({ ...form, created_by: e.target.value })
-                    }
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  Când?
+                </label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={form.date}
+                  onChange={(e) =>
+                    setForm({ ...form, date: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
               </div>
 
               <button
