@@ -201,15 +201,18 @@ export default function Home() {
     }
   }
 
-  async function handleDelete(activityId: string) {
-    if (!confirm("Sigur vrei să ștergi această activitate?")) return;
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  async function confirmDelete() {
+    if (!deleteId) return;
     const { error } = await supabase
       .from("hangout_activities")
       .delete()
-      .eq("id", activityId);
+      .eq("id", deleteId);
     if (!error) {
-      setActivities((prev) => prev.filter((a) => a.id !== activityId));
+      setActivities((prev) => prev.filter((a) => a.id !== deleteId));
     }
+    setDeleteId(null);
   }
 
   async function handleLogout() {
@@ -369,7 +372,7 @@ export default function Home() {
                       </span>
                       {isOwner && (
                         <button
-                          onClick={() => handleDelete(activity.id)}
+                          onClick={() => setDeleteId(activity.id)}
                           className="w-6 h-6 rounded-full bg-background flex items-center justify-center text-muted hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
                           title="Șterge activitatea"
                         >
@@ -477,6 +480,41 @@ export default function Home() {
           Făcut cu drag pentru o lume mai conectată.
         </div>
       </footer>
+
+      {/* Delete Confirmation Modal */}
+      {deleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+            onClick={() => setDeleteId(null)}
+          />
+          <div className="relative bg-surface rounded-2xl w-full max-w-sm p-6 animate-slide-up text-center">
+            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold mb-1">Șterge activitatea?</h3>
+            <p className="text-sm text-muted mb-6">
+              Această acțiune nu poate fi anulată.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-surface-hover transition-all"
+              >
+                Anulează
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-all active:scale-[0.98]"
+              >
+                Șterge
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Auth Modal */}
       {showAuth && (
