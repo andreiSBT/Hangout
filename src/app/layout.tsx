@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import { RegisterSW } from "@/components/RegisterSW";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -11,6 +12,20 @@ export const metadata: Metadata = {
   title: "Hangout — Socializează în viața reală",
   description:
     "Propune activități, găsește oameni din zona ta și ieși din casă. Conexiuni reale, nu doar online.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Hangout",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#f97316",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -20,7 +35,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ro" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <head>
+        <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+      </head>
+      <body className="min-h-full flex flex-col font-sans">
+        {children}
+        <RegisterSW />
+      </body>
     </html>
   );
 }
