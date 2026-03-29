@@ -152,28 +152,33 @@ export default function Home() {
     setShowForm(true);
   }
 
+  const [formError, setFormError] = useState("");
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setFormError("");
     const { day, month, year, hour, minute } = dateFields;
     const dateStr = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:00`;
     const { error } = await supabase
       .from("hangout_activities")
       .insert([{ ...form, date: dateStr, user_id: user?.id }]);
-    if (!error) {
-      setForm({
-        title: "",
-        description: "",
-        category: "sport",
-        location: "",
-        max_people: 10,
-        min_age: 10,
-        max_age: 99,
-        created_by: "",
-      });
-      setDateFields({ day: "", month: "", year: "", hour: "", minute: "" });
-      setShowForm(false);
-      fetchActivities();
+    if (error) {
+      setFormError(error.message);
+      return;
     }
+    setForm({
+      title: "",
+      description: "",
+      category: "sport",
+      location: "",
+      max_people: 10,
+      min_age: 10,
+      max_age: 99,
+      created_by: "",
+    });
+    setDateFields({ day: "", month: "", year: "", hour: "", minute: "" });
+    setShowForm(false);
+    fetchActivities();
   }
 
   async function handleJoin(activityId: string) {
@@ -699,6 +704,12 @@ export default function Home() {
                   </select>
                 </div>
               </div>
+
+              {formError && (
+                <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">
+                  {formError}
+                </p>
+              )}
 
               <button
                 type="submit"
