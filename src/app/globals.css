@@ -33,20 +33,20 @@ body {
 }
 
 .dark {
-  --color-background: #09090b;
-  --color-foreground: #fafafa;
+  --color-background: #000000;
+  --color-foreground: #e4e4e7;
   --color-primary: #fb923c;
   --color-primary-dark: #f97316;
-  --color-primary-light: #1a1008;
+  --color-primary-light: #110a04;
   --color-secondary: #a78bfa;
-  --color-secondary-light: #13101f;
-  --color-surface: #18181b;
-  --color-surface-hover: #27272a;
-  --color-muted: #a1a1aa;
-  --color-border: #27272a;
+  --color-secondary-light: #0c0a14;
+  --color-surface: #0a0a0b;
+  --color-surface-hover: #161618;
+  --color-muted: #71717a;
+  --color-border: #1a1a1e;
   --color-success: #4ade80;
   --color-danger: #f87171;
-  --color-danger-light: #1f1012;
+  --color-danger-light: #150a0a;
 }
 
 @keyframes fade-in {
