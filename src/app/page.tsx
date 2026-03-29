@@ -75,6 +75,7 @@ export default function Home() {
     title: "",
     description: "",
     category: "sport",
+    customCategory: "",
     location: "",
     max_people: 10,
     min_age: 10,
@@ -182,9 +183,16 @@ export default function Home() {
     setSubmitting(true);
     const { day, month, year, hour, minute } = dateFields;
     const dateStr = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:00`;
+    const { customCategory, ...formData } = form;
+    const insertData = {
+      ...formData,
+      category: form.category === "other" && customCategory ? customCategory : form.category,
+      date: dateStr,
+      user_id: user?.id,
+    };
     const { error } = await supabase
       .from("hangout_activities")
-      .insert([{ ...form, date: dateStr, user_id: user?.id }]);
+      .insert([insertData]);
     setSubmitting(false);
     if (error) {
       setFormError(error.message);
@@ -194,6 +202,7 @@ export default function Home() {
       title: "",
       description: "",
       category: "sport",
+      customCategory: "",
       location: "",
       max_people: 10,
       min_age: 10,
@@ -265,12 +274,20 @@ export default function Home() {
 
   const filtered = activities
     .filter((a) => (filter ? a.category === filter : true))
-    .filter(
-      (a) =>
-        !search ||
-        a.title.toLowerCase().includes(search.toLowerCase()) ||
-        a.location.toLowerCase().includes(search.toLowerCase())
-    );
+    .filter((a) => {
+      if (!search) return true;
+      const s = search.toLowerCase();
+      const cat = getCategoryInfo(a.category);
+      const dateStr = formatDate(a.date).toLowerCase();
+      return (
+        a.title.toLowerCase().includes(s) ||
+        a.location.toLowerCase().includes(s) ||
+        a.created_by.toLowerCase().includes(s) ||
+        cat.label.toLowerCase().includes(s) ||
+        dateStr.includes(s) ||
+        (a.description?.toLowerCase().includes(s) ?? false)
+      );
+    });
 
   return (
     <div className="flex flex-col min-h-full">
@@ -352,7 +369,7 @@ export default function Home() {
               </svg>
               <input
                 type="text"
-                placeholder="Caută după nume sau locație..."
+                placeholder="Caută după nume, locație, categorie, dată..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 rounded-2xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary shadow-sm transition-all"
@@ -700,6 +717,16 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
+                {form.category === "other" && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Scrie categoria ta..."
+                    value={form.customCategory}
+                    onChange={(e) => setForm({ ...form, customCategory: e.target.value })}
+                    className="mt-2 w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
