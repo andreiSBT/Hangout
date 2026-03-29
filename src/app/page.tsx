@@ -17,6 +17,7 @@ type Activity = {
   max_age: number;
   created_by: string;
   created_at: string;
+  user_id: string | null;
 };
 
 type Participant = {
@@ -157,7 +158,7 @@ export default function Home() {
     const dateStr = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:00`;
     const { error } = await supabase
       .from("hangout_activities")
-      .insert([{ ...form, date: dateStr }]);
+      .insert([{ ...form, date: dateStr, user_id: user?.id }]);
     if (!error) {
       setForm({
         title: "",
@@ -192,6 +193,17 @@ export default function Home() {
         ...prev,
         [activityId]: (prev[activityId] || 0) + 1,
       }));
+    }
+  }
+
+  async function handleDelete(activityId: string) {
+    if (!confirm("Sigur vrei să ștergi această activitate?")) return;
+    const { error } = await supabase
+      .from("hangout_activities")
+      .delete()
+      .eq("id", activityId);
+    if (!error) {
+      setActivities((prev) => prev.filter((a) => a.id !== activityId));
     }
   }
 
@@ -334,6 +346,7 @@ export default function Home() {
               const count = participantCounts[activity.id] || 0;
               const isFull = count >= activity.max_people;
               const joined = joinedIds.has(activity.id);
+              const isOwner = user && activity.user_id === user.id;
 
               return (
                 <div
@@ -345,9 +358,22 @@ export default function Home() {
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-background rounded-lg text-xs font-medium text-muted">
                       {cat.icon} {cat.label}
                     </span>
-                    <span className="text-xs font-medium text-primary">
-                      {formatDate(activity.date)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-primary">
+                        {formatDate(activity.date)}
+                      </span>
+                      {isOwner && (
+                        <button
+                          onClick={() => handleDelete(activity.id)}
+                          className="w-6 h-6 rounded-full bg-background flex items-center justify-center text-muted hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Șterge activitatea"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <h3 className="text-lg font-bold mb-1 leading-snug">
