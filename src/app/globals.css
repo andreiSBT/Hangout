@@ -1,52 +1,69 @@
 @import "tailwindcss";
 
+:root {
+  --bg: #fafaf9;
+  --fg: #1c1917;
+  --c-primary: #f97316;
+  --c-primary-dark: #ea580c;
+  --c-primary-light: #fff7ed;
+  --c-secondary: #8b5cf6;
+  --c-secondary-light: #f5f3ff;
+  --c-accent: #06b6d4;
+  --c-surface: #ffffff;
+  --c-surface-hover: #f5f5f4;
+  --c-muted: #78716c;
+  --c-border: #e7e5e4;
+  --c-success: #22c55e;
+  --c-danger: #ef4444;
+  --c-danger-light: #fef2f2;
+}
+
+.dark {
+  --bg: #000000;
+  --fg: #e4e4e7;
+  --c-primary: #fb923c;
+  --c-primary-dark: #f97316;
+  --c-primary-light: #000000;
+  --c-secondary: #a78bfa;
+  --c-secondary-light: #0c0a14;
+  --c-surface: #0a0a0b;
+  --c-surface-hover: #161618;
+  --c-muted: #71717a;
+  --c-border: #1a1a1e;
+  --c-success: #4ade80;
+  --c-danger: #f87171;
+  --c-danger-light: #150a0a;
+}
+
 @theme inline {
-  --color-background: #fafaf9;
-  --color-foreground: #1c1917;
-  --color-primary: #f97316;
-  --color-primary-dark: #ea580c;
-  --color-primary-light: #fff7ed;
-  --color-secondary: #8b5cf6;
-  --color-secondary-light: #f5f3ff;
-  --color-accent: #06b6d4;
-  --color-surface: #ffffff;
-  --color-surface-hover: #f5f5f4;
-  --color-muted: #78716c;
-  --color-border: #e7e5e4;
-  --color-success: #22c55e;
-  --color-danger: #ef4444;
-  --color-danger-light: #fef2f2;
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-primary: var(--c-primary);
+  --color-primary-dark: var(--c-primary-dark);
+  --color-primary-light: var(--c-primary-light);
+  --color-secondary: var(--c-secondary);
+  --color-secondary-light: var(--c-secondary-light);
+  --color-accent: var(--c-accent);
+  --color-surface: var(--c-surface);
+  --color-surface-hover: var(--c-surface-hover);
+  --color-muted: var(--c-muted);
+  --color-border: var(--c-border);
+  --color-success: var(--c-success);
+  --color-danger: var(--c-danger);
+  --color-danger-light: var(--c-danger-light);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--color-background);
-  color: var(--color-foreground);
+  background: var(--bg);
+  color: var(--fg);
 }
 
-/* Smooth transition for dark mode */
 *,
 *::before,
 *::after {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
-}
-
-.dark {
-  --color-background: #000000;
-  --color-foreground: #e4e4e7;
-  --color-primary: #fb923c;
-  --color-primary-dark: #f97316;
-  --color-primary-light: #050301;
-  --color-secondary: #a78bfa;
-  --color-secondary-light: #0c0a14;
-  --color-surface: #0a0a0b;
-  --color-surface-hover: #161618;
-  --color-muted: #71717a;
-  --color-border: #1a1a1e;
-  --color-success: #4ade80;
-  --color-danger: #f87171;
-  --color-danger-light: #150a0a;
 }
 
 @keyframes fade-in {
