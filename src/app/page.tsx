@@ -330,7 +330,7 @@ export default function Home() {
           <h1 className="animate-fade-in text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
             {rare ? "Ieși din casă." : "Ieși din casă."}{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-              {rare ? "Atinge iarba." : "Fă-ți prieteni."}
+              {rare ? "Atinge iarbă." : "Fă-ți prieteni."}
             </span>
           </h1>
           <p className="animate-slide-up mt-4 sm:mt-5 text-base sm:text-xl text-muted max-w-2xl mx-auto leading-relaxed">
