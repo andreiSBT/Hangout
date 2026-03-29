@@ -244,7 +244,7 @@ export default function ActivityPage() {
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold mb-3 leading-tight">
+          <h1 className="text-xl sm:text-3xl font-extrabold mb-3 leading-tight">
             {activity.title}
           </h1>
 
@@ -254,7 +254,7 @@ export default function ActivityPage() {
             </p>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 mb-6">
             <div className="bg-background rounded-xl p-4">
               <div className="flex items-center gap-1.5 text-xs text-muted mb-1.5">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -311,8 +311,8 @@ export default function ActivityPage() {
 
           {/* Join button */}
           {alreadyJoined ? (
-            <div className="flex items-center gap-3">
-              <div className="flex-1 flex items-center gap-2 px-5 py-3 rounded-xl bg-success/10 text-success font-semibold text-sm">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+              <div className="flex-1 flex items-center gap-2 px-4 sm:px-5 py-3 rounded-xl bg-success/10 text-success font-semibold text-sm">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
@@ -320,7 +320,7 @@ export default function ActivityPage() {
               </div>
               <button
                 onClick={handleLeave}
-                className="px-4 py-3 rounded-xl border border-border text-sm font-medium text-muted hover:text-danger hover:border-danger/30 hover:bg-danger-light transition-all active:scale-95"
+                className="px-4 py-2.5 sm:py-3 rounded-xl border border-border text-sm font-medium text-muted hover:text-danger hover:border-danger/30 hover:bg-danger-light transition-all active:scale-95 text-center"
               >
                 Părăsește
               </button>

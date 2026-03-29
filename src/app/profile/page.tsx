@@ -107,18 +107,18 @@ export default function ProfilePage() {
           {/* Gradient banner */}
           <div className="h-24 bg-gradient-to-r from-primary via-secondary to-primary" />
 
-          <div className="px-6 sm:px-8 pb-6">
+          <div className="px-4 sm:px-8 pb-5 sm:pb-6">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-3xl font-bold -mt-10 ring-4 ring-surface shadow-xl">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-2xl sm:text-3xl font-bold -mt-8 sm:-mt-10 ring-4 ring-surface shadow-xl">
               {username?.[0]?.toUpperCase() ?? "?"}
             </div>
 
             <div className="mt-4">
-              <h1 className="text-2xl font-extrabold">{username}</h1>
+              <h1 className="text-xl sm:text-2xl font-extrabold">{username}</h1>
               <p className="text-sm text-muted mt-0.5">{user?.email}</p>
             </div>
 
-            <div className="flex gap-6 mt-5">
+            <div className="flex gap-4 sm:gap-6 mt-4 sm:mt-5">
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center">
                   <span className="text-lg font-bold text-primary">{myActivities.length}</span>

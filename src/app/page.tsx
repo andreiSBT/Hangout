@@ -295,7 +295,7 @@ export default function Home() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary/20">
               H
             </div>
-            <span className="text-xl font-bold tracking-tight">Hangout</span>
+            <span className="text-xl font-bold tracking-tight hidden sm:block">Hangout</span>
           </button>
           <div className="flex items-center gap-2 sm:gap-3">
             <button
@@ -333,23 +333,24 @@ export default function Home() {
             ) : (
               <button
                 onClick={() => setShowAuth(true)}
-                className="px-4 py-2 border border-border rounded-full text-sm font-medium hover:bg-surface-hover hover:border-foreground/20 transition-all active:scale-95"
+                className="px-3 sm:px-4 py-2 border border-border rounded-full text-xs sm:text-sm font-medium hover:bg-surface-hover hover:border-foreground/20 transition-all active:scale-95"
               >
-                Intră în cont
+                Intră
               </button>
             )}
             <button
               onClick={handlePropune}
-              className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all active:scale-95"
+              className="px-3 sm:px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full text-xs sm:text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all active:scale-95"
             >
-              + Propune
+              <span className="sm:hidden">+</span>
+              <span className="hidden sm:inline">+ Propune</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary-light to-background pt-16 pb-20 px-4 sm:px-6">
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary-light to-background pt-10 sm:pt-16 pb-12 sm:pb-20 px-4 sm:px-6">
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -359,13 +360,13 @@ export default function Home() {
           }}
         />
         <div className="max-w-5xl mx-auto text-center relative">
-          <h1 className="animate-fade-in text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
+          <h1 className="animate-fade-in text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
             Ieși din casă.{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
               Fă-ți prieteni.
             </span>
           </h1>
-          <p className="animate-slide-up mt-5 text-lg sm:text-xl text-muted max-w-2xl mx-auto leading-relaxed">
+          <p className="animate-slide-up mt-4 sm:mt-5 text-base sm:text-xl text-muted max-w-2xl mx-auto leading-relaxed">
             Propune o activitate, găsește oameni din zona ta și socializează în
             viața reală — nu doar online.
           </p>
@@ -438,8 +439,8 @@ export default function Home() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 animate-fade-in">
-            <div className="text-6xl mb-5">{search ? "🔍" : "🌅"}</div>
-            <h3 className="text-2xl font-bold mb-2">
+            <div className="text-5xl sm:text-6xl mb-4 sm:mb-5">{search ? "🔍" : "🌅"}</div>
+            <h3 className="text-xl sm:text-2xl font-bold mb-2">
               {search ? "Niciun rezultat" : "Nicio activitate încă"}
             </h3>
             <p className="text-muted mb-8 max-w-sm mx-auto">
@@ -715,7 +716,7 @@ export default function Home() {
 
               <div>
                 <label className="block text-sm font-medium mb-1.5">Categorie</label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat.value}
