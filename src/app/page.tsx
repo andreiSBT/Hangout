@@ -257,7 +257,7 @@ export default function Home() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary-light to-background pt-16 pb-20 px-4 sm:px-6 dark:from-[#1a0f00] dark:to-background">
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary-light to-background pt-16 pb-20 px-4 sm:px-6">
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -392,7 +392,7 @@ export default function Home() {
                             e.stopPropagation();
                             setDeleteId(activity.id);
                           }}
-                          className="w-6 h-6 rounded-full bg-background flex items-center justify-center text-muted hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                          className="w-6 h-6 rounded-full bg-background flex items-center justify-center text-muted hover:text-danger hover:bg-danger-light transition-colors opacity-0 group-hover:opacity-100"
                           title="Șterge activitatea"
                         >
                           <svg
@@ -497,8 +497,8 @@ export default function Home() {
             onClick={() => setDeleteId(null)}
           />
           <div className="relative bg-surface rounded-2xl w-full max-w-sm p-6 animate-slide-up text-center">
-            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="w-12 h-12 rounded-full bg-danger-light flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
@@ -515,7 +515,7 @@ export default function Home() {
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-all active:scale-[0.98]"
+                className="flex-1 py-2.5 rounded-xl bg-danger text-white text-sm font-medium hover:bg-danger/80 transition-all active:scale-[0.98]"
               >
                 Șterge
               </button>
@@ -726,7 +726,7 @@ export default function Home() {
               </div>
 
               {formError && (
-                <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">
+                <p className="text-sm text-danger bg-danger-light px-3 py-2 rounded-lg">
                   {formError}
                 </p>
               )}

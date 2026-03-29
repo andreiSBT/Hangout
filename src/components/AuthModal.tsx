@@ -126,7 +126,7 @@ export default function AuthModal({ onClose, onAuth }: Props) {
           </div>
 
           {error && (
-            <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">
+            <p className="text-sm text-danger bg-danger-light px-3 py-2 rounded-lg">
               {error}
             </p>
           )}

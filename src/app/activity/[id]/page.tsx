@@ -320,7 +320,7 @@ export default function ActivityPage() {
                     {user && c.user_id === user.id && (
                       <button
                         onClick={() => handleDeleteComment(c.id)}
-                        className="text-xs text-muted hover:text-red-500 transition-colors"
+                        className="text-xs text-muted hover:text-danger transition-colors"
                       >
                         Șterge
                       </button>
