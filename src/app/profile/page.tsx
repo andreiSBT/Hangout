@@ -149,7 +149,15 @@ export default function ProfilePage() {
     const next = !dark;
     setDark(next);
     localStorage.setItem("hangout-dark", String(next));
-    document.documentElement.classList.toggle("dark", next);
+    if (next) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    // Force repaint on mobile
+    document.body.style.display = "none";
+    document.body.offsetHeight;
+    document.body.style.display = "";
   }
 
   async function handleChangePassword(e: React.FormEvent) {
