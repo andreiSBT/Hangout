@@ -69,7 +69,7 @@ export default function Home() {
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [rare] = useState(() => Math.random() < 0.5);
+  const [rare] = useState(() => Math.random() < 0.001);
 
   const [form, setForm] = useState({
     title: "",
