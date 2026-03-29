@@ -16,6 +16,7 @@
   --c-success: #22c55e;
   --c-danger: #ef4444;
   --c-danger-light: #fef2f2;
+  color-scheme: light;
 }
 
 .dark {
@@ -33,6 +34,7 @@
   --c-success: #4ade80;
   --c-danger: #f87171;
   --c-danger-light: #150a0a;
+  color-scheme: dark;
 }
 
 @theme inline {
