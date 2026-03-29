@@ -10,6 +10,7 @@ import {
   formatDate,
   timeAgo,
 } from "@/lib/shared";
+import Avatar from "@/components/Avatar";
 import type { User } from "@supabase/supabase-js";
 
 type Participant = {
@@ -45,6 +46,8 @@ export default function ActivityPage() {
   const [newComment, setNewComment] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
+  const [avatarMap, setAvatarMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [joined, setJoined] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -63,10 +66,13 @@ export default function ActivityPage() {
   async function fetchUsername(userId: string) {
     const { data } = await supabase
       .from("hangout_profiles")
-      .select("username")
+      .select("username, avatar_url")
       .eq("id", userId)
       .single();
-    if (data) setUsername(data.username);
+    if (data) {
+      setUsername(data.username);
+      setMyAvatarUrl(data.avatar_url);
+    }
   }
 
   async function fetchAll() {
@@ -79,6 +85,25 @@ export default function ActivityPage() {
     if (actRes.data) setActivity(actRes.data);
     if (partRes.data) setParticipants(partRes.data);
     if (comRes.data) setComments(comRes.data);
+
+    // Fetch avatars for all usernames
+    const allNames = new Set<string>();
+    if (partRes.data) partRes.data.forEach((p: Participant) => allNames.add(p.name));
+    if (comRes.data) comRes.data.forEach((c: Comment) => allNames.add(c.username));
+    if (allNames.size > 0) {
+      const { data: profiles } = await supabase
+        .from("hangout_profiles")
+        .select("username, avatar_url")
+        .in("username", Array.from(allNames));
+      if (profiles) {
+        const map: Record<string, string> = {};
+        profiles.forEach((p) => {
+          if (p.avatar_url) map[p.username] = p.avatar_url;
+        });
+        setAvatarMap(map);
+      }
+    }
+
     setLoading(false);
   }
 
@@ -359,9 +384,7 @@ export default function ActivityPage() {
                   className="flex items-center gap-2 px-3 py-2 bg-background rounded-xl animate-scale-in"
                   style={{ animationDelay: `${i * 40}ms` }}
                 >
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-[10px] font-bold">
-                    {p.name[0]?.toUpperCase()}
-                  </div>
+                  <Avatar src={avatarMap[p.name]} name={p.name} size="xs" />
                   <span className="text-sm font-medium">{p.name}</span>
                 </div>
               ))}
@@ -394,9 +417,7 @@ export default function ActivityPage() {
                 className="flex gap-3 animate-fade-in"
                 style={{ animationDelay: `${i * 30}ms` }}
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold shrink-0">
-                  {c.username[0]?.toUpperCase()}
-                </div>
+                <Avatar src={avatarMap[c.username]} name={c.username} size="sm" className="shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="bg-background rounded-xl rounded-tl-sm px-4 py-2.5">
                     <div className="flex items-center gap-2 mb-0.5">
@@ -420,9 +441,7 @@ export default function ActivityPage() {
 
           {user ? (
             <form onSubmit={handleComment} className="flex gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold shrink-0">
-                {username?.[0]?.toUpperCase() ?? "?"}
-              </div>
+              <Avatar src={myAvatarUrl} name={username} size="sm" className="shrink-0" />
               <div className="flex-1 flex gap-2">
                 <input
                   type="text"

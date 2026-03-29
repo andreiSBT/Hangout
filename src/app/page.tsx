@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Activity, CATEGORIES, getCategoryInfo, formatDate } from "@/lib/shared";
 import AuthModal from "@/components/AuthModal";
+import Avatar from "@/components/Avatar";
 import type { User } from "@supabase/supabase-js";
 
 type Participant = {
@@ -66,6 +67,7 @@ export default function Home() {
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const [form, setForm] = useState({
@@ -122,11 +124,12 @@ export default function Home() {
   async function fetchUsername(userId: string) {
     const { data } = await supabase
       .from("hangout_profiles")
-      .select("username")
+      .select("username, avatar_url")
       .eq("id", userId)
       .single();
     if (data) {
       setUsername(data.username);
+      setAvatarUrl(data.avatar_url);
       return data.username;
     }
     return null;
@@ -287,10 +290,10 @@ export default function Home() {
               <>
                 <button
                   onClick={() => router.push("/profile")}
-                  className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold hover:shadow-lg hover:shadow-primary/25 transition-all active:scale-90 ring-2 ring-background"
+                  className="hover:shadow-lg hover:shadow-primary/25 transition-all active:scale-90 ring-2 ring-background rounded-full"
                   title="Profilul meu"
                 >
-                  {username?.[0]?.toUpperCase() ?? "?"}
+                  <Avatar src={avatarUrl} name={username} size="md" />
                 </button>
               </>
             ) : (

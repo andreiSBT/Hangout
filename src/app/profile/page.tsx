@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Activity, getCategoryInfo, formatDate } from "@/lib/shared";
+import Avatar from "@/components/Avatar";
 import type { User } from "@supabase/supabase-js";
 
 function Toast({ message, onDone }: { message: string; onDone: () => void }) {
@@ -24,16 +25,18 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [myActivities, setMyActivities] = useState<Activity[]>([]);
   const [joinedActivities, setJoinedActivities] = useState<Activity[]>([]);
   const [tab, setTab] = useState<"created" | "joined" | "settings">("created");
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const clearToast = useCallback(() => setToast(null), []);
 
-  // Settings state
   const [dark, setDark] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -58,10 +61,13 @@ export default function ProfilePage() {
 
     const { data: profile } = await supabase
       .from("hangout_profiles")
-      .select("username")
+      .select("username, avatar_url")
       .eq("id", userId)
       .single();
-    if (profile) setUsername(profile.username);
+    if (profile) {
+      setUsername(profile.username);
+      setAvatarUrl(profile.avatar_url);
+    }
 
     const { data: created } = await supabase
       .from("hangout_activities")
@@ -86,6 +92,57 @@ export default function ProfilePage() {
     }
 
     setLoading(false);
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith("image/")) {
+      setToast("Doar imagini sunt permise.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setToast("Imaginea trebuie să fie sub 2MB.");
+      return;
+    }
+
+    setUploading(true);
+
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/avatar.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      setToast("Eroare la upload: " + uploadError.message);
+      setUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(path);
+
+    const publicUrl = urlData.publicUrl + "?t=" + Date.now();
+
+    const { error: updateError } = await supabase
+      .from("hangout_profiles")
+      .update({ avatar_url: publicUrl })
+      .eq("id", user.id);
+
+    if (updateError) {
+      setToast("Eroare la salvare: " + updateError.message);
+    } else {
+      setAvatarUrl(publicUrl);
+      setToast("Poza de profil actualizată!");
+    }
+
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = "";
   }
 
   function toggleDark() {
@@ -172,8 +229,13 @@ export default function ProfilePage() {
         <div className="relative bg-surface rounded-2xl border border-border overflow-hidden mb-6 animate-fade-in">
           <div className="h-24 bg-gradient-to-r from-primary via-secondary to-primary" />
           <div className="px-4 sm:px-8 pb-5 sm:pb-6">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-2xl sm:text-3xl font-bold -mt-8 sm:-mt-10 ring-4 ring-surface shadow-xl">
-              {username?.[0]?.toUpperCase() ?? "?"}
+            <div className="-mt-8 sm:-mt-10">
+              <Avatar
+                src={avatarUrl}
+                name={username}
+                size="lg"
+                className="ring-4 ring-surface shadow-xl !rounded-2xl"
+              />
             </div>
             <div className="mt-4">
               <h1 className="text-xl sm:text-2xl font-extrabold">{username}</h1>
@@ -216,6 +278,43 @@ export default function ProfilePage() {
         {/* Settings Tab */}
         {tab === "settings" ? (
           <div className="space-y-4 animate-fade-in">
+            {/* Profile Picture */}
+            <div className="bg-surface rounded-2xl border border-border p-5 sm:p-6">
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Poză de profil</h2>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Avatar
+                    src={avatarUrl}
+                    name={username}
+                    size="xl"
+                    className="ring-2 ring-border"
+                  />
+                  {uploading && (
+                    <div className="absolute inset-0 rounded-full bg-foreground/50 flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-muted mb-3">JPG, PNG sau GIF. Max 2MB.</p>
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    disabled={uploading}
+                    className="px-4 py-2 bg-foreground text-background rounded-xl text-sm font-semibold hover:opacity-90 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {uploading ? "Se încarcă..." : avatarUrl ? "Schimbă poza" : "Încarcă poză"}
+                  </button>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Account Info */}
             <div className="bg-surface rounded-2xl border border-border p-5 sm:p-6">
               <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Cont</h2>
@@ -225,9 +324,7 @@ export default function ProfilePage() {
                     <div className="text-xs text-muted mb-0.5">Username</div>
                     <div className="font-semibold">{username}</div>
                   </div>
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold">
-                    {username?.[0]?.toUpperCase() ?? "?"}
-                  </div>
+                  <Avatar src={avatarUrl} name={username} size="md" />
                 </div>
                 <div className="border-t border-border" />
                 <div>
@@ -323,7 +420,6 @@ export default function ProfilePage() {
           </div>
         ) : (
           <>
-            {/* Activities */}
             {activities.length === 0 ? (
               <div className="text-center py-16 animate-fade-in">
                 <div className="text-5xl mb-4">
