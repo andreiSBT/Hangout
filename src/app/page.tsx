@@ -96,25 +96,26 @@ export default function Home() {
       document.documentElement.classList.add("dark");
     }
 
-    let initialLoad = true;
+    let ignoreFirstEvent = true;
 
     supabase.auth.getUser().then(async ({ data }) => {
       setUser(data.user);
       let uname: string | null = null;
       if (data.user) uname = await fetchUsername(data.user.id);
       fetchActivities(uname);
-      initialLoad = false;
+      setTimeout(() => { ignoreFirstEvent = false; }, 100);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        if (initialLoad) return;
+        if (ignoreFirstEvent && _event === "INITIAL_SESSION") return;
         setUser(session?.user ?? null);
         let uname: string | null = null;
         if (session?.user) {
           uname = await fetchUsername(session.user.id);
         } else {
           setUsername(null);
+          setAvatarUrl(null);
         }
         fetchActivities(uname);
       }
