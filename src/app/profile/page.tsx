@@ -65,78 +65,98 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-primary/30 border-t-primary rounded-full animate-spin" />
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-xl border-b border-border">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
+            <div className="skeleton w-8 h-8 rounded-full" />
+            <div className="skeleton h-5 w-28" />
+          </div>
+        </header>
+        <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+          <div className="bg-surface rounded-2xl border border-border p-8 text-center">
+            <div className="skeleton w-20 h-20 rounded-full mx-auto mb-4" />
+            <div className="skeleton h-7 w-32 mx-auto mb-2" />
+            <div className="skeleton h-4 w-40 mx-auto" />
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-lg border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
+      <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-xl border-b border-border">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <button
             onClick={() => router.push("/")}
-            className="w-8 h-8 rounded-full bg-background flex items-center justify-center text-muted hover:text-foreground transition-colors"
+            className="flex items-center gap-2 text-muted hover:text-foreground transition-colors"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 19l-7-7 7-7"
-              />
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
+            <span className="text-sm font-medium">Înapoi</span>
           </button>
           <span className="text-lg font-bold tracking-tight">Profilul meu</span>
+          <div className="w-16" />
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         {/* Profile Header */}
-        <div className="bg-surface rounded-2xl border border-border p-6 sm:p-8 mb-6 text-center">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
-            {username?.[0]?.toUpperCase() ?? "?"}
-          </div>
-          <h1 className="text-2xl font-extrabold">{username}</h1>
-          <p className="text-sm text-muted mt-1">{user?.email}</p>
-          <div className="flex justify-center gap-6 mt-4">
-            <div className="text-center">
-              <div className="text-xl font-bold">{myActivities.length}</div>
-              <div className="text-xs text-muted">Create</div>
+        <div className="relative bg-surface rounded-2xl border border-border overflow-hidden mb-6 animate-fade-in">
+          {/* Gradient banner */}
+          <div className="h-24 bg-gradient-to-r from-primary via-secondary to-primary" />
+
+          <div className="px-6 sm:px-8 pb-6">
+            {/* Avatar */}
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-3xl font-bold -mt-10 ring-4 ring-surface shadow-xl">
+              {username?.[0]?.toUpperCase() ?? "?"}
             </div>
-            <div className="text-center">
-              <div className="text-xl font-bold">
-                {joinedActivities.length}
+
+            <div className="mt-4">
+              <h1 className="text-2xl font-extrabold">{username}</h1>
+              <p className="text-sm text-muted mt-0.5">{user?.email}</p>
+            </div>
+
+            <div className="flex gap-6 mt-5">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center">
+                  <span className="text-lg font-bold text-primary">{myActivities.length}</span>
+                </div>
+                <div className="text-xs text-muted leading-tight">
+                  Activități<br />create
+                </div>
               </div>
-              <div className="text-xs text-muted">Participări</div>
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-secondary-light flex items-center justify-center">
+                  <span className="text-lg font-bold text-secondary">{joinedActivities.length}</span>
+                </div>
+                <div className="text-xs text-muted leading-tight">
+                  Activități<br />participări
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-1 p-1 bg-surface rounded-xl border border-border mb-6">
           <button
             onClick={() => setTab("created")}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all active:scale-95 ${
               tab === "created"
-                ? "bg-foreground text-background"
-                : "bg-surface border border-border text-muted hover:bg-surface-hover"
+                ? "bg-foreground text-background shadow-sm"
+                : "text-muted hover:text-foreground"
             }`}
           >
             Activitățile mele
           </button>
           <button
             onClick={() => setTab("joined")}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all active:scale-95 ${
               tab === "joined"
-                ? "bg-foreground text-background"
-                : "bg-surface border border-border text-muted hover:bg-surface-hover"
+                ? "bg-foreground text-background shadow-sm"
+                : "text-muted hover:text-foreground"
             }`}
           >
             Participări
@@ -145,19 +165,30 @@ export default function ProfilePage() {
 
         {/* Activities */}
         {activities.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-3">
+          <div className="text-center py-16 animate-fade-in">
+            <div className="text-5xl mb-4">
               {tab === "created" ? "📝" : "🎉"}
             </div>
-            <p className="text-muted">
+            <h3 className="text-xl font-bold mb-2">
               {tab === "created"
-                ? "Nu ai propus nicio activitate încă."
-                : "Nu ai participat la nicio activitate încă."}
+                ? "Nu ai propus nicio activitate"
+                : "Nu ai participat la nimic încă"}
+            </h3>
+            <p className="text-muted mb-6 max-w-sm mx-auto">
+              {tab === "created"
+                ? "Propune prima ta activitate și invită-ți prietenii!"
+                : "Explorează activitățile disponibile și alătură-te!"}
             </p>
+            <button
+              onClick={() => router.push("/")}
+              className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-full font-semibold hover:shadow-lg transition-all active:scale-95"
+            >
+              {tab === "created" ? "Propune o activitate" : "Explorează activități"}
+            </button>
           </div>
         ) : (
           <div className="space-y-3">
-            {activities.map((activity) => {
+            {activities.map((activity, i) => {
               const cat = getCategoryInfo(activity.category);
               const isPast = new Date(activity.date) < new Date();
 
@@ -165,22 +196,29 @@ export default function ProfilePage() {
                 <button
                   key={activity.id}
                   onClick={() => router.push(`/activity/${activity.id}`)}
-                  className={`w-full text-left bg-surface rounded-xl border border-border p-4 hover:shadow-md transition-all ${
-                    isPast ? "opacity-60" : ""
+                  className={`w-full text-left bg-surface rounded-xl border border-border p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-slide-up group ${
+                    isPast ? "opacity-50" : ""
                   }`}
+                  style={{ animationDelay: `${i * 50}ms` }}
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-muted">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-background rounded-lg text-xs font-medium text-muted">
                       {cat.icon} {cat.label}
                     </span>
-                    <span
-                      className={`text-xs font-medium ${isPast ? "text-muted" : "text-primary"}`}
-                    >
+                    <span className={`text-xs font-medium ${isPast ? "text-muted" : "text-primary"}`}>
                       {isPast ? "Trecut" : formatDate(activity.date)}
                     </span>
                   </div>
-                  <h3 className="font-bold">{activity.title}</h3>
-                  <p className="text-sm text-muted">{activity.location}</p>
+                  <h3 className="font-bold group-hover:text-primary transition-colors">
+                    {activity.title}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-sm text-muted mt-1">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {activity.location}
+                  </div>
                 </button>
               );
             })}
