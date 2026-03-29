@@ -69,6 +69,7 @@ export default function Home() {
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [rare] = useState(() => Math.random() < 0.001);
 
   const [form, setForm] = useState({
     title: "",
@@ -327,9 +328,9 @@ export default function Home() {
         />
         <div className="max-w-5xl mx-auto text-center relative">
           <h1 className="animate-fade-in text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
-            Ieși din casă.{" "}
+            {rare ? "Ieși din casă." : "Ieși din casă."}{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-              Fă-ți prieteni.
+              {rare ? "Atinge iarba." : "Fă-ți prieteni."}
             </span>
           </h1>
           <p className="animate-slide-up mt-4 sm:mt-5 text-base sm:text-xl text-muted max-w-2xl mx-auto leading-relaxed">
