@@ -229,7 +229,7 @@ export default function ProfilePage() {
         <div className="relative bg-surface rounded-2xl border border-border overflow-hidden mb-6 animate-fade-in">
           <div className="h-24 bg-gradient-to-r from-primary via-secondary to-primary" />
           <div className="px-4 sm:px-8 pb-5 sm:pb-6">
-            <div className="-mt-8 sm:-mt-10">
+            <div className="-mt-10">
               <Avatar
                 src={avatarUrl}
                 name={username}
