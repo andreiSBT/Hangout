@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Activity, getCategoryInfo, formatDate } from "@/lib/shared";
+import { getLevel, getUnlockedBadges, BADGES, type UserStats } from "@/lib/badges";
+import { useI18n } from "@/lib/i18n";
 import Avatar from "@/components/Avatar";
 import type { User } from "@supabase/supabase-js";
 
@@ -25,11 +27,13 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { t, lang, setLang } = useI18n();
   const fileRef = useRef<HTMLInputElement>(null);
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [points, setPoints] = useState(0);
+  const [avgStars, setAvgStars] = useState(0);
   const [myActivities, setMyActivities] = useState<Activity[]>([]);
   const [joinedActivities, setJoinedActivities] = useState<Activity[]>([]);
   const [tab, setTab] = useState<"created" | "joined" | "settings">("created");
@@ -46,12 +50,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
-
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        router.push("/");
-        return;
-      }
+      if (!data.user) { router.push("/"); return; }
       setUser(data.user);
       fetchProfile(data.user.id);
     });
@@ -59,90 +59,47 @@ export default function ProfilePage() {
 
   async function fetchProfile(userId: string) {
     setLoading(true);
-
     const { data: profile } = await supabase
       .from("hangout_profiles")
-      .select("username, avatar_url, points")
+      .select("username, avatar_url, points, avg_stars")
       .eq("id", userId)
       .single();
     if (profile) {
       setUsername(profile.username);
       setAvatarUrl(profile.avatar_url);
       setPoints(profile.points ?? 0);
+      setAvgStars(profile.avg_stars ?? 0);
     }
 
     const { data: created } = await supabase
-      .from("hangout_activities")
-      .select("*")
-      .eq("user_id", userId)
-      .order("date", { ascending: false });
+      .from("hangout_activities").select("*").eq("user_id", userId).order("date", { ascending: false });
     if (created) setMyActivities(created);
 
     const { data: participations } = await supabase
-      .from("hangout_participants")
-      .select("activity_id")
-      .eq("name", profile?.username ?? "");
-
+      .from("hangout_participants").select("activity_id").eq("name", profile?.username ?? "");
     if (participations && participations.length > 0) {
       const ids = participations.map((p) => p.activity_id);
       const { data: joined } = await supabase
-        .from("hangout_activities")
-        .select("*")
-        .in("id", ids)
-        .order("date", { ascending: false });
+        .from("hangout_activities").select("*").in("id", ids).order("date", { ascending: false });
       if (joined) setJoinedActivities(joined);
     }
-
     setLoading(false);
   }
 
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-
-    if (!file.type.startsWith("image/")) {
-      setToast("Doar imagini sunt permise.");
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      setToast("Imaginea trebuie să fie sub 2MB.");
-      return;
-    }
-
+    if (!file.type.startsWith("image/")) { setToast("Doar imagini sunt permise."); return; }
+    if (file.size > 2 * 1024 * 1024) { setToast("Max 2MB."); return; }
     setUploading(true);
-
     const ext = file.name.split(".").pop();
     const path = `${user.id}/avatar.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(path, file, { upsert: true });
-
-    if (uploadError) {
-      setToast("Eroare la upload: " + uploadError.message);
-      setUploading(false);
-      return;
-    }
-
-    const { data: urlData } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(path);
-
+    const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (uploadError) { setToast("Eroare: " + uploadError.message); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
     const publicUrl = urlData.publicUrl + "?t=" + Date.now();
-
-    const { error: updateError } = await supabase
-      .from("hangout_profiles")
-      .update({ avatar_url: publicUrl })
-      .eq("id", user.id);
-
-    if (updateError) {
-      setToast("Eroare la salvare: " + updateError.message);
-    } else {
-      setAvatarUrl(publicUrl);
-      setToast("Poza de profil actualizată!");
-    }
-
+    const { error: updateError } = await supabase.from("hangout_profiles").update({ avatar_url: publicUrl }).eq("id", user.id);
+    if (!updateError) { setAvatarUrl(publicUrl); setToast(t("toast.picUpdated")); }
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
   }
@@ -151,12 +108,7 @@ export default function ProfilePage() {
     const next = !dark;
     setDark(next);
     localStorage.setItem("hangout-dark", String(next));
-    if (next) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    // Force repaint on mobile
+    if (next) { document.documentElement.classList.add("dark"); } else { document.documentElement.classList.remove("dark"); }
     document.body.style.display = "none";
     document.body.offsetHeight;
     document.body.style.display = "";
@@ -165,36 +117,22 @@ export default function ProfilePage() {
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     setPasswordError("");
-
-    if (newPassword.length < 6) {
-      setPasswordError("Parola trebuie să aibă minim 6 caractere.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("Parolele nu se potrivesc.");
-      return;
-    }
-
+    if (newPassword.length < 6) { setPasswordError("Minim 6 caractere."); return; }
+    if (newPassword !== confirmPassword) { setPasswordError("Parolele nu se potrivesc."); return; }
     setChangingPassword(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setChangingPassword(false);
-
-    if (error) {
-      setPasswordError(error.message);
-      return;
-    }
-
-    setNewPassword("");
-    setConfirmPassword("");
-    setToast("Parola a fost schimbată!");
+    if (error) { setPasswordError(error.message); return; }
+    setNewPassword(""); setConfirmPassword("");
+    setToast(t("toast.pwdChanged"));
   }
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/");
-  }
+  async function handleLogout() { await supabase.auth.signOut(); router.push("/"); }
 
   const activities = tab === "created" ? myActivities : joinedActivities;
+  const stats: UserStats = { points, activitiesCreated: myActivities.length, activitiesJoined: joinedActivities.length, avgStars: avgStars };
+  const level = getLevel(points);
+  const unlockedBadges = getUnlockedBadges(stats);
 
   if (loading) {
     return (
@@ -220,16 +158,11 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <button
-            onClick={() => router.push("/")}
-            className="flex items-center gap-2 text-muted hover:text-foreground transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="text-sm font-medium">Înapoi</span>
+          <button onClick={() => router.push("/")} className="flex items-center gap-2 text-muted hover:text-foreground transition-colors">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            <span className="text-sm font-medium">{t("nav.back")}</span>
           </button>
-          <span className="text-lg font-bold tracking-tight">Profilul meu</span>
+          <span className="text-lg font-bold tracking-tight">{t("profile.title")}</span>
           <div className="w-16" />
         </div>
       </header>
@@ -240,71 +173,102 @@ export default function ProfilePage() {
           <div className="h-24 bg-gradient-to-r from-primary via-secondary to-primary" />
           <div className="px-4 sm:px-8 pb-5 sm:pb-6">
             <div className="-mt-8 sm:-mt-10">
-              <Avatar
-                src={avatarUrl}
-                name={username}
-                size="lg"
-                className="ring-4 ring-surface shadow-xl !rounded-2xl border-2 border-surface"
-              />
+              <Avatar src={avatarUrl} name={username} size="lg" className="ring-4 ring-surface shadow-xl !rounded-2xl border-2 border-surface" />
             </div>
-            <div className="mt-4">
-              <h1 className="text-xl sm:text-2xl font-extrabold">{username}</h1>
-              <p className="text-sm text-muted mt-0.5">{user?.email}</p>
+            <div className="mt-4 flex items-center gap-3">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-extrabold">{username}</h1>
+                <p className="text-sm text-muted mt-0.5">{user?.email}</p>
+              </div>
+              <div className="ml-auto px-3 py-1 rounded-full bg-primary-light text-primary text-xs font-bold">
+                {lang === "ro" ? level.name : level.nameEn} · Lv.{level.level}
+              </div>
             </div>
-            <div className="flex gap-4 sm:gap-6 mt-4 sm:mt-5">
+
+            {/* Level progress */}
+            <div className="mt-3">
+              <div className="flex justify-between text-xs text-muted mb-1">
+                <span>{points} pts</span>
+                <span>{level.nextAt} pts</span>
+              </div>
+              <div className="h-2 bg-background rounded-full overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-500" style={{ width: `${level.progress}%` }} />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 sm:gap-5 mt-4">
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center">
-                  <span className="text-lg font-bold text-primary">{myActivities.length}</span>
+                <div className="w-9 h-9 rounded-lg bg-primary-light flex items-center justify-center">
+                  <span className="text-base font-bold text-primary">{myActivities.length}</span>
                 </div>
-                <div className="text-xs text-muted leading-tight">Activități<br />create</div>
+                <div className="text-xs text-muted leading-tight">{t("profile.activities")}</div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-secondary-light flex items-center justify-center">
-                  <span className="text-lg font-bold text-secondary">{joinedActivities.length}</span>
+                <div className="w-9 h-9 rounded-lg bg-secondary-light flex items-center justify-center">
+                  <span className="text-base font-bold text-secondary">{joinedActivities.length}</span>
                 </div>
-                <div className="text-xs text-muted leading-tight">Activități<br />participări</div>
+                <div className="text-xs text-muted leading-tight">{t("profile.participations")}</div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-                  <span className="text-lg font-bold text-success">{points}</span>
+                <div className="w-9 h-9 rounded-lg bg-success/10 flex items-center justify-center">
+                  <span className="text-base font-bold text-success">{points}</span>
                 </div>
-                <div className="text-xs text-muted leading-tight">Puncte<br />reputație</div>
+                <div className="text-xs text-muted leading-tight">Puncte</div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Badges */}
+        <div className="bg-surface rounded-2xl border border-border p-5 mb-6 animate-fade-in" style={{ animationDelay: "100ms" }}>
+          <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">{t("profile.badges")}</h2>
+          {BADGES.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {BADGES.map((badge) => {
+                const unlocked = unlockedBadges.some((b) => b.id === badge.id);
+                return (
+                  <div
+                    key={badge.id}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                      unlocked
+                        ? "bg-primary-light text-primary"
+                        : "bg-background text-muted opacity-40"
+                    }`}
+                    title={lang === "ro" ? badge.description : badge.descriptionEn}
+                  >
+                    <span className="text-base">{badge.icon}</span>
+                    {lang === "ro" ? badge.name : badge.nameEn}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Tabs */}
         <div className="flex gap-1 p-1 bg-surface rounded-xl border border-border mb-6">
-          {(["created", "joined", "settings"] as const).map((t) => (
+          {(["created", "joined", "settings"] as const).map((tb) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tb}
+              onClick={() => setTab(tb)}
               className={`flex-1 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all active:scale-95 ${
-                tab === t
-                  ? "bg-foreground text-background shadow-sm"
-                  : "text-muted hover:text-foreground"
+                tab === tb ? "bg-foreground text-background shadow-sm" : "text-muted hover:text-foreground"
               }`}
             >
-              {t === "created" ? "Activități" : t === "joined" ? "Participări" : "Setări"}
+              {tb === "created" ? t("profile.activities") : tb === "joined" ? t("profile.participations") : t("profile.settings")}
             </button>
           ))}
         </div>
 
-        {/* Settings Tab */}
+        {/* Settings */}
         {tab === "settings" ? (
           <div className="space-y-4 animate-fade-in">
             {/* Profile Picture */}
             <div className="bg-surface rounded-2xl border border-border p-5 sm:p-6">
-              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Poză de profil</h2>
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">{t("settings.profilePic")}</h2>
               <div className="flex items-center gap-4">
                 <div className="relative">
-                  <Avatar
-                    src={avatarUrl}
-                    name={username}
-                    size="xl"
-                    className="ring-2 ring-border"
-                  />
+                  <Avatar src={avatarUrl} name={username} size="xl" className="ring-2 ring-border" />
                   {uploading && (
                     <div className="absolute inset-0 rounded-full bg-foreground/50 flex items-center justify-center">
                       <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -312,28 +276,18 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-muted mb-3">JPG, PNG sau GIF. Max 2MB.</p>
-                  <button
-                    onClick={() => fileRef.current?.click()}
-                    disabled={uploading}
-                    className="px-4 py-2 bg-foreground text-background rounded-xl text-sm font-semibold hover:opacity-90 transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    {uploading ? "Se încarcă..." : avatarUrl ? "Schimbă poza" : "Încarcă poză"}
+                  <p className="text-sm text-muted mb-3">{t("settings.picDesc")}</p>
+                  <button onClick={() => fileRef.current?.click()} disabled={uploading} className="px-4 py-2 bg-foreground text-background rounded-xl text-sm font-semibold hover:opacity-90 transition-all active:scale-95 disabled:opacity-50">
+                    {uploading ? "..." : avatarUrl ? t("settings.changePic") : t("settings.uploadPic")}
                   </button>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="hidden"
-                  />
+                  <input ref={fileRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
                 </div>
               </div>
             </div>
 
-            {/* Account Info */}
+            {/* Account */}
             <div className="bg-surface rounded-2xl border border-border p-5 sm:p-6">
-              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Cont</h2>
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">{t("settings.account")}</h2>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -352,110 +306,74 @@ export default function ProfilePage() {
 
             {/* Appearance */}
             <div className="bg-surface rounded-2xl border border-border p-5 sm:p-6">
-              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Aspect</h2>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center">
-                    {dark ? (
-                      <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
-                    )}
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">{t("settings.appearance")}</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center">
+                      {dark ? (
+                        <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                      ) : (
+                        <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold">{t("settings.darkMode")}</div>
+                      <div className="text-xs text-muted">{dark ? t("settings.darkOn") : t("settings.darkOff")}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-semibold">Mod întunecat</div>
-                    <div className="text-xs text-muted">{dark ? "Activat" : "Dezactivat"}</div>
+                  <button onClick={toggleDark} className={`relative w-12 h-7 rounded-full transition-colors ${dark ? "bg-primary" : "bg-border"}`}>
+                    <div className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${dark ? "translate-x-5" : "translate-x-0.5"}`} />
+                  </button>
+                </div>
+                <div className="border-t border-border" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center text-lg">
+                      🌐
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold">{t("settings.language")}</div>
+                      <div className="text-xs text-muted">{lang === "ro" ? "Română" : "English"}</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 p-0.5 bg-background rounded-lg">
+                    <button onClick={() => setLang("ro")} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${lang === "ro" ? "bg-foreground text-background" : "text-muted"}`}>
+                      RO
+                    </button>
+                    <button onClick={() => setLang("en")} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${lang === "en" ? "bg-foreground text-background" : "text-muted"}`}>
+                      EN
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={toggleDark}
-                  className={`relative w-12 h-7 rounded-full transition-colors ${dark ? "bg-primary" : "bg-border"}`}
-                >
-                  <div className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${dark ? "translate-x-5" : "translate-x-0.5"}`} />
-                </button>
               </div>
             </div>
 
-            {/* Change Password */}
+            {/* Password */}
             <div className="bg-surface rounded-2xl border border-border p-5 sm:p-6">
-              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Schimbă parola</h2>
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">{t("settings.changePwd")}</h2>
               <form onSubmit={handleChangePassword} className="space-y-3">
-                <div>
-                  <label className="block text-xs text-muted mb-1.5">Parolă nouă</label>
-                  <input
-                    type="password"
-                    required
-                    minLength={6}
-                    placeholder="Minim 6 caractere"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-muted mb-1.5">Confirmă parola</label>
-                  <input
-                    type="password"
-                    required
-                    minLength={6}
-                    placeholder="Repetă parola"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                </div>
-                {passwordError && (
-                  <div className="flex items-start gap-2 text-sm text-danger bg-danger-light px-4 py-2.5 rounded-xl">
-                    <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    {passwordError}
-                  </div>
-                )}
-                <button
-                  type="submit"
-                  disabled={changingPassword}
-                  className="w-full py-2.5 bg-foreground text-background rounded-xl text-sm font-semibold hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50"
-                >
-                  {changingPassword ? "Se schimbă..." : "Schimbă parola"}
+                <input type="password" required minLength={6} placeholder={t("settings.newPwd")} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+                <input type="password" required minLength={6} placeholder={t("settings.confirmPwd")} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+                {passwordError && <div className="text-sm text-danger bg-danger-light px-4 py-2.5 rounded-xl">{passwordError}</div>}
+                <button type="submit" disabled={changingPassword} className="w-full py-2.5 bg-foreground text-background rounded-xl text-sm font-semibold hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50">
+                  {changingPassword ? t("settings.changingPwd") : t("settings.changePwdBtn")}
                 </button>
               </form>
             </div>
 
-            {/* Logout */}
-            <button
-              onClick={handleLogout}
-              className="w-full py-3 bg-surface rounded-2xl border border-border text-danger text-sm font-semibold hover:bg-danger-light transition-all active:scale-[0.98]"
-            >
-              Ieși din cont
+            <button onClick={handleLogout} className="w-full py-3 bg-surface rounded-2xl border border-border text-danger text-sm font-semibold hover:bg-danger-light transition-all active:scale-[0.98]">
+              {t("settings.logout")}
             </button>
           </div>
         ) : (
           <>
             {activities.length === 0 ? (
               <div className="text-center py-16 animate-fade-in">
-                <div className="text-5xl mb-4">
-                  {tab === "created" ? "📝" : "🎉"}
-                </div>
-                <h3 className="text-xl font-bold mb-2">
-                  {tab === "created"
-                    ? "Nu ai propus nicio activitate"
-                    : "Nu ai participat la nimic încă"}
-                </h3>
-                <p className="text-muted mb-6 max-w-sm mx-auto">
-                  {tab === "created"
-                    ? "Propune prima ta activitate și invită-ți prietenii!"
-                    : "Explorează activitățile disponibile și alătură-te!"}
-                </p>
-                <button
-                  onClick={() => router.push("/")}
-                  className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-full font-semibold hover:shadow-lg transition-all active:scale-95"
-                >
-                  {tab === "created" ? "Propune o activitate" : "Explorează activități"}
+                <div className="text-5xl mb-4">{tab === "created" ? "📝" : "🎉"}</div>
+                <h3 className="text-xl font-bold mb-2">{tab === "created" ? t("profile.noCreated") : t("profile.noJoined")}</h3>
+                <button onClick={() => router.push("/")} className="mt-4 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-full font-semibold hover:shadow-lg transition-all active:scale-95">
+                  {t("activity.propose")}
                 </button>
               </div>
             ) : (
@@ -463,32 +381,15 @@ export default function ProfilePage() {
                 {activities.map((activity, i) => {
                   const cat = getCategoryInfo(activity.category);
                   const isPast = new Date(activity.date) < new Date();
-
                   return (
-                    <button
-                      key={activity.id}
-                      onClick={() => router.push(`/activity/${activity.id}`)}
-                      className={`w-full text-left bg-surface rounded-xl border border-border p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-slide-up group ${
-                        isPast ? "opacity-50" : ""
-                      }`}
-                      style={{ animationDelay: `${i * 50}ms` }}
-                    >
+                    <button key={activity.id} onClick={() => router.push(`/activity/${activity.id}`)} className={`w-full text-left bg-surface rounded-xl border border-border p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-slide-up group ${isPast ? "opacity-50" : ""}`} style={{ animationDelay: `${i * 50}ms` }}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-background rounded-lg text-xs font-medium text-muted">
-                          {cat.icon} {cat.label}
-                        </span>
-                        <span className={`text-xs font-medium ${isPast ? "text-muted" : "text-primary"}`}>
-                          {isPast ? "Trecut" : formatDate(activity.date)}
-                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-background rounded-lg text-xs font-medium text-muted">{cat.icon} {cat.label}</span>
+                        <span className={`text-xs font-medium ${isPast ? "text-muted" : "text-primary"}`}>{isPast ? t("activity.past") : formatDate(activity.date)}</span>
                       </div>
-                      <h3 className="font-bold group-hover:text-primary transition-colors">
-                        {activity.title}
-                      </h3>
+                      <h3 className="font-bold group-hover:text-primary transition-colors">{activity.title}</h3>
                       <div className="flex items-center gap-1.5 text-sm text-muted mt-1">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         {activity.location}
                       </div>
                     </button>
