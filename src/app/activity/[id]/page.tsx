@@ -11,7 +11,15 @@ import {
   timeAgo,
 } from "@/lib/shared";
 import Avatar from "@/components/Avatar";
+import { useI18n } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
+
+type Message = {
+  id: string;
+  username: string;
+  content: string;
+  created_at: string;
+};
 
 type Participant = {
   id: string;
@@ -52,6 +60,11 @@ export default function ActivityPage() {
   const [joined, setJoined] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [detailTab, setDetailTab] = useState<"comments" | "chat">("comments");
+  const [reviewStars, setReviewStars] = useState<Record<string, number>>({});
+  const { t, lang } = useI18n();
 
   const clearToast = useCallback(() => setToast(null), []);
 
@@ -103,6 +116,14 @@ export default function ActivityPage() {
         setAvatarMap(map);
       }
     }
+
+    // Fetch chat messages
+    const { data: msgs } = await supabase
+      .from("hangout_messages")
+      .select("*")
+      .eq("activity_id", id)
+      .order("created_at", { ascending: true });
+    if (msgs) setMessages(msgs);
 
     setLoading(false);
   }
@@ -180,6 +201,40 @@ export default function ActivityPage() {
     // -15 puncte celui raportat
     await supabase.rpc("add_points", { user_username: reportedUsername, amount: -15 });
     setToast(`${reportedUsername} a fost raportat. -15 puncte`);
+  }
+
+  async function handleSendMessage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user || !username || !newMessage.trim()) return;
+    const { error } = await supabase.from("hangout_messages").insert([
+      { activity_id: id, username, content: newMessage.trim() },
+    ]);
+    if (!error) {
+      setNewMessage("");
+      const { data: msgs } = await supabase
+        .from("hangout_messages").select("*").eq("activity_id", id).order("created_at", { ascending: true });
+      if (msgs) setMessages(msgs);
+    }
+  }
+
+  async function handleReview(reviewedUsername: string, stars: number) {
+    if (!username || reviewedUsername === username) return;
+    const { error } = await supabase.from("hangout_reviews").insert([
+      { activity_id: id, reviewer_username: username, reviewed_username: reviewedUsername, stars },
+    ]);
+    if (error) {
+      if (error.code === "23505") setToast(t("review.alreadyDone"));
+      return;
+    }
+    setReviewStars((prev) => ({ ...prev, [reviewedUsername]: stars }));
+    // Update avg_stars (simple approach)
+    const { data: reviews } = await supabase
+      .from("hangout_reviews").select("stars").eq("reviewed_username", reviewedUsername);
+    if (reviews && reviews.length > 0) {
+      const avg = reviews.reduce((sum, r) => sum + r.stars, 0) / reviews.length;
+      await supabase.from("hangout_profiles").update({ avg_stars: Math.round(avg * 10) / 10 }).eq("username", reviewedUsername);
+    }
+    setToast(t("review.done"));
   }
 
   function handleShare(platform: string) {
@@ -431,83 +486,121 @@ export default function ActivityPage() {
           </div>
         )}
 
-        {/* Comments */}
-        <div className="bg-surface rounded-2xl border border-border p-6 animate-fade-in" style={{ animationDelay: "200ms" }}>
-          <h2 className="text-lg font-bold mb-5 flex items-center gap-2">
-            <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            Comentarii ({comments.length})
-          </h2>
-
-          {comments.length === 0 && (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-3">💬</div>
-              <p className="text-sm text-muted">
-                Niciun comentariu încă. Fii primul care întreabă ceva!
-              </p>
-            </div>
-          )}
-
-          <div className="space-y-4 mb-6">
-            {comments.map((c, i) => (
-              <div
-                key={c.id}
-                className="flex gap-3 animate-fade-in"
-                style={{ animationDelay: `${i * 30}ms` }}
-              >
-                <Avatar src={avatarMap[c.username]} name={c.username} size="sm" className="shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="bg-background rounded-xl rounded-tl-sm px-4 py-2.5">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-semibold">{c.username}</span>
-                      <span className="text-xs text-muted">{timeAgo(c.created_at)}</span>
-                    </div>
-                    <p className="text-sm text-muted">{c.content}</p>
-                  </div>
-                  {user && c.user_id === user.id && (
-                    <button
-                      onClick={() => handleDeleteComment(c.id)}
-                      className="text-xs text-muted hover:text-danger transition-colors mt-1 ml-4"
-                    >
-                      Șterge
-                    </button>
-                  )}
-                </div>
-              </div>
+        {/* Tabs: Comments / Chat / Reviews */}
+        <div className="bg-surface rounded-2xl border border-border overflow-hidden animate-fade-in" style={{ animationDelay: "200ms" }}>
+          <div className="flex border-b border-border">
+            {(["comments", "chat"] as const).map((tb) => (
+              <button key={tb} onClick={() => setDetailTab(tb)} className={`flex-1 py-3 text-sm font-medium transition-all ${detailTab === tb ? "text-foreground border-b-2 border-primary" : "text-muted hover:text-foreground"}`}>
+                {tb === "comments" ? `${t("detail.comments")} (${comments.length})` : `${t("detail.chat")} (${messages.length})`}
+              </button>
             ))}
           </div>
 
-          {user ? (
-            <form onSubmit={handleComment} className="flex gap-2">
-              <Avatar src={myAvatarUrl} name={username} size="sm" className="shrink-0" />
-              <div className="flex-1 flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Scrie un comentariu..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
-                <button
-                  type="submit"
-                  disabled={!newComment.trim() || sending}
-                  className="px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-all disabled:opacity-30 active:scale-95"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="text-center py-4 px-4 bg-background rounded-xl">
-              <p className="text-sm text-muted">
-                Intră în cont pentru a comenta.
-              </p>
-            </div>
-          )}
+          <div className="p-5 sm:p-6">
+            {detailTab === "comments" ? (
+              <>
+                {comments.length === 0 && (
+                  <div className="text-center py-6">
+                    <div className="text-4xl mb-3">💬</div>
+                    <p className="text-sm text-muted">{t("detail.noComments")}</p>
+                  </div>
+                )}
+                <div className="space-y-4 mb-4">
+                  {comments.map((c, i) => (
+                    <div key={c.id} className="flex gap-3 animate-fade-in" style={{ animationDelay: `${i * 30}ms` }}>
+                      <Avatar src={avatarMap[c.username]} name={c.username} size="sm" className="shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="bg-background rounded-xl rounded-tl-sm px-4 py-2.5">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-sm font-semibold">{c.username}</span>
+                            <span className="text-xs text-muted">{timeAgo(c.created_at)}</span>
+                          </div>
+                          <p className="text-sm text-muted">{c.content}</p>
+                        </div>
+                        {user && c.user_id === user.id && (
+                          <button onClick={() => handleDeleteComment(c.id)} className="text-xs text-muted hover:text-danger transition-colors mt-1 ml-4">{t("detail.delete")}</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {user ? (
+                  <form onSubmit={handleComment} className="flex gap-2">
+                    <Avatar src={myAvatarUrl} name={username} size="sm" className="shrink-0" />
+                    <div className="flex-1 flex gap-2">
+                      <input type="text" placeholder={t("detail.commentPlaceholder")} value={newComment} onChange={(e) => setNewComment(e.target.value)} className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+                      <button type="submit" disabled={!newComment.trim() || sending} className="px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-all disabled:opacity-30 active:scale-95">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 5l7 7-7 7" /></svg>
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="text-center py-3 px-4 bg-background rounded-xl"><p className="text-sm text-muted">{t("detail.loginComment")}</p></div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="space-y-3 mb-4 max-h-80 overflow-y-auto">
+                  {messages.length === 0 && (
+                    <div className="text-center py-6 text-sm text-muted">🗨️ {lang === "ro" ? "Niciun mesaj încă" : "No messages yet"}</div>
+                  )}
+                  {messages.map((m) => {
+                    const isMe = m.username === username;
+                    return (
+                      <div key={m.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm ${isMe ? "bg-primary text-white rounded-br-sm" : "bg-background rounded-bl-sm"}`}>
+                          {!isMe && <div className="text-xs font-semibold mb-0.5">{m.username}</div>}
+                          <p>{m.content}</p>
+                          <div className={`text-[10px] mt-0.5 ${isMe ? "text-white/60" : "text-muted"}`}>{timeAgo(m.created_at)}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {user ? (
+                  <form onSubmit={handleSendMessage} className="flex gap-2">
+                    <input type="text" placeholder={t("chat.placeholder")} value={newMessage} onChange={(e) => setNewMessage(e.target.value)} className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+                    <button type="submit" disabled={!newMessage.trim()} className="px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-all disabled:opacity-30 active:scale-95">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 5l7 7-7 7" /></svg>
+                    </button>
+                  </form>
+                ) : (
+                  <div className="text-center py-3 px-4 bg-background rounded-xl"><p className="text-sm text-muted">{t("chat.login")}</p></div>
+                )}
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Reviews - only for past activities */}
+        {activity && new Date(activity.date) < new Date() && participants.length > 0 && user && (
+          <div className="bg-surface rounded-2xl border border-border p-5 sm:p-6 mt-6 animate-fade-in" style={{ animationDelay: "300ms" }}>
+            <h2 className="text-lg font-bold mb-4">{t("detail.review")}</h2>
+            <div className="space-y-3">
+              {participants.filter((p) => p.name !== username).map((p) => (
+                <div key={p.id} className="flex items-center justify-between bg-background rounded-xl p-3">
+                  <div className="flex items-center gap-2">
+                    <Avatar src={avatarMap[p.name]} name={p.name} size="sm" />
+                    <span className="text-sm font-medium">{p.name}</span>
+                  </div>
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => handleReview(p.name, star)}
+                        className={`text-lg transition-all hover:scale-110 ${
+                          (reviewStars[p.name] ?? 0) >= star ? "text-primary" : "text-border"
+                        }`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       {toast && <Toast message={toast} onDone={clearToast} />}
