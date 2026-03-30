@@ -29,6 +29,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [points, setPoints] = useState(0);
   const [myActivities, setMyActivities] = useState<Activity[]>([]);
   const [joinedActivities, setJoinedActivities] = useState<Activity[]>([]);
   const [tab, setTab] = useState<"created" | "joined" | "settings">("created");
@@ -61,12 +62,13 @@ export default function ProfilePage() {
 
     const { data: profile } = await supabase
       .from("hangout_profiles")
-      .select("username, avatar_url")
+      .select("username, avatar_url, points")
       .eq("id", userId)
       .single();
     if (profile) {
       setUsername(profile.username);
       setAvatarUrl(profile.avatar_url);
+      setPoints(profile.points ?? 0);
     }
 
     const { data: created } = await supabase
@@ -261,6 +263,12 @@ export default function ProfilePage() {
                   <span className="text-lg font-bold text-secondary">{joinedActivities.length}</span>
                 </div>
                 <div className="text-xs text-muted leading-tight">Activități<br />participări</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                  <span className="text-lg font-bold text-success">{points}</span>
+                </div>
+                <div className="text-xs text-muted leading-tight">Puncte<br />reputație</div>
               </div>
             </div>
           </div>

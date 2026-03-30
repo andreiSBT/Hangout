@@ -117,7 +117,8 @@ export default function ActivityPage() {
       .insert([{ activity_id: id, name: username }]);
     if (!error) {
       setJoined(true);
-      setToast("Te-ai alăturat!");
+      await supabase.rpc("add_points", { user_username: username, amount: 10 });
+      setToast("Te-ai alăturat! +10 puncte");
       fetchAll();
     }
   }
@@ -131,7 +132,8 @@ export default function ActivityPage() {
       .eq("name", username);
     if (!error) {
       setJoined(false);
-      setToast("Ai părăsit activitatea.");
+      await supabase.rpc("add_points", { user_username: username, amount: -10 });
+      setToast("Ai părăsit activitatea. -10 puncte");
       fetchAll();
     }
   }
@@ -156,6 +158,28 @@ export default function ActivityPage() {
       setComments((prev) => prev.filter((c) => c.id !== commentId));
       setToast("Comentariu șters.");
     }
+  }
+
+  async function handleReport(reportedUsername: string) {
+    if (!username || reportedUsername === username) return;
+    const { error } = await supabase
+      .from("hangout_reports")
+      .insert([{
+        activity_id: id,
+        reported_username: reportedUsername,
+        reporter_username: username,
+      }]);
+    if (error) {
+      if (error.code === "23505") {
+        setToast("Ai raportat deja acest participant.");
+      } else {
+        setToast("Eroare: " + error.message);
+      }
+      return;
+    }
+    // -15 puncte celui raportat
+    await supabase.rpc("add_points", { user_username: reportedUsername, amount: -15 });
+    setToast(`${reportedUsername} a fost raportat. -15 puncte`);
   }
 
   function handleShare(platform: string) {
@@ -378,16 +402,31 @@ export default function ActivityPage() {
               Participanți ({participants.length})
             </h2>
             <div className="flex flex-wrap gap-2">
-              {participants.map((p, i) => (
-                <div
-                  key={p.id}
-                  className="flex items-center gap-2 px-3 py-2 bg-background rounded-xl animate-scale-in"
-                  style={{ animationDelay: `${i * 40}ms` }}
-                >
-                  <Avatar src={avatarMap[p.name]} name={p.name} size="xs" />
-                  <span className="text-sm font-medium">{p.name}</span>
-                </div>
-              ))}
+              {participants.map((p, i) => {
+                const isPast = activity && new Date(activity.date) < new Date();
+                const canReport = isPast && user && username && p.name !== username;
+                return (
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-2 px-3 py-2 bg-background rounded-xl animate-scale-in group/part"
+                    style={{ animationDelay: `${i * 40}ms` }}
+                  >
+                    <Avatar src={avatarMap[p.name]} name={p.name} size="xs" />
+                    <span className="text-sm font-medium">{p.name}</span>
+                    {canReport && (
+                      <button
+                        onClick={() => handleReport(p.name)}
+                        className="ml-1 text-muted hover:text-danger transition-colors opacity-0 group-hover/part:opacity-100"
+                        title="Raportează — nu a venit"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

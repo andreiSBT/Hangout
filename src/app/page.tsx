@@ -229,7 +229,9 @@ export default function Home() {
         ...prev,
         [activityId]: (prev[activityId] || 0) + 1,
       }));
-      setToast("Te-ai alăturat!");
+      // +10 puncte
+      await supabase.rpc("add_points", { user_username: username, amount: 10 });
+      setToast("Te-ai alăturat! +10 puncte");
     }
   }
 
@@ -250,7 +252,9 @@ export default function Home() {
         ...prev,
         [activityId]: Math.max((prev[activityId] || 1) - 1, 0),
       }));
-      setToast("Ai părăsit activitatea.");
+      // -10 puncte
+      await supabase.rpc("add_points", { user_username: username, amount: -10 });
+      setToast("Ai părăsit activitatea. -10 puncte");
     }
   }
 
