@@ -346,6 +346,13 @@ export default function Home() {
             <span className="text-xl font-bold tracking-tight hidden sm:block">Hangout</span>
           </button>
           <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => router.push("/map")}
+              className="w-9 h-9 rounded-full bg-background border border-border flex items-center justify-center text-muted hover:text-foreground hover:border-foreground/20 transition-all active:scale-90"
+              title="Hartă"
+            >
+              <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
+            </button>
             {!authReady ? (
               <div className="w-9 h-9" />
             ) : user ? (

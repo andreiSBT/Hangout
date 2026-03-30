@@ -11,6 +11,9 @@ export type Activity = {
   created_by: string;
   created_at: string;
   user_id: string | null;
+  recurrence: string | null;
+  lat: number | null;
+  lng: number | null;
 };
 
 export type Comment = {
