@@ -92,19 +92,19 @@ export default function FriendsPage() {
       { from_username: username, to_username: addInput.trim() },
     ]);
     if (error) {
-      if (error.code === "23505") setToast(lang === "ro" ? "Cerere deja trimisă." : "Request already sent.");
-      else setToast(lang === "ro" ? "Utilizatorul nu există." : "User not found.");
+      if (error.code === "23505") setToast(t("misc.friendReqDup"));
+      else setToast(t("misc.friendNotFound"));
       return;
     }
     setAddInput("");
-    setToast(lang === "ro" ? "Cerere trimisă!" : "Request sent!");
+    setToast(t("misc.friendReqSent"));
     fetchFriends(username);
   }
 
   async function handleAccept(id: string) {
     await supabase.from("hangout_friends").update({ status: "accepted" }).eq("id", id);
     if (username) fetchFriends(username);
-    setToast(lang === "ro" ? "Prieten acceptat!" : "Friend accepted!");
+    setToast(t("misc.friendAccepted"));
   }
 
   async function handleReject(id: string) {
@@ -115,7 +115,7 @@ export default function FriendsPage() {
   async function handleRemove(id: string) {
     await supabase.from("hangout_friends").delete().eq("id", id);
     if (username) fetchFriends(username);
-    setToast(lang === "ro" ? "Prieten eliminat." : "Friend removed.");
+    setToast(t("misc.friendRemoved"));
   }
 
   const accepted = friends.filter((f) => f.status === "accepted");

@@ -258,7 +258,7 @@ export default function Home() {
       setShowAuth(true);
       return;
     }
-    const name = username ?? "Anonim";
+    const name = username ?? t("misc.anonymous");
     const { error } = await supabase
       .from("hangout_participants")
       .insert([{ activity_id: activityId, name }]);
@@ -308,7 +308,7 @@ export default function Home() {
       .eq("id", deleteId);
     if (!error) {
       setActivities((prev) => prev.filter((a) => a.id !== deleteId));
-      setToast("Activitate ștearsă.");
+      setToast(t("toast.deleted"));
     }
     setDeleteId(null);
   }
@@ -360,7 +360,7 @@ export default function Home() {
             <button
               onClick={() => router.push("/map")}
               className="w-9 h-9 rounded-full bg-background border border-border flex items-center justify-center text-muted hover:text-foreground hover:border-foreground/20 transition-all active:scale-90"
-              title="Hartă"
+              title={t("misc.map")}
             >
               <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
             </button>
@@ -379,15 +379,15 @@ export default function Home() {
                 onClick={() => setShowAuth(true)}
                 className="px-3 sm:px-4 py-2 border border-border rounded-full text-xs sm:text-sm font-medium hover:bg-surface-hover hover:border-foreground/20 transition-all active:scale-95"
               >
-                Intră
+                {t("nav.login")}
               </button>
             )}
             <button
               onClick={handlePropune}
               className="px-3 sm:px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full text-xs sm:text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all active:scale-95"
             >
-              <span className="sm:hidden">+</span>
-              <span className="hidden sm:inline">+ Propune</span>
+              <span className="sm:hidden">{t("nav.proposeMobile")}</span>
+              <span className="hidden sm:inline">{t("nav.propose")}</span>
             </button>
           </div>
         </div>
@@ -549,9 +549,9 @@ export default function Home() {
           <>
             <div className="mb-6 flex items-center justify-between">
               <p className="text-sm text-muted">
-                {filtered.length} {filtered.length === 1 ? "activitate" : "activități"}
-                {filter ? ` în ${getCategoryInfo(filter).label}` : ""}
-                {search ? ` pentru "${search}"` : ""}
+                {filtered.length} {filtered.length === 1 ? t("filter.result") : t("filter.results")}
+                {filter ? ` ${t("misc.in")} ${lang === "en" ? getCategoryInfo(filter).labelEn : getCategoryInfo(filter).label}` : ""}
+                {search ? ` ${t("misc.for")} "${search}"` : ""}
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -592,7 +592,7 @@ export default function Home() {
                               setDeleteId(activity.id);
                             }}
                             className="w-6 h-6 rounded-full bg-background flex items-center justify-center text-muted hover:text-danger hover:bg-danger-light transition-colors opacity-0 group-hover:opacity-100"
-                            title="Șterge activitatea"
+                            title={t("misc.deleteActivity")}
                           >
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -623,7 +623,7 @@ export default function Home() {
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-                        {activity.min_age}–{activity.max_age} ani
+                        {activity.min_age}–{activity.max_age} {t("activity.age")}
                       </span>
                     </div>
 
@@ -752,7 +752,7 @@ export default function Home() {
           onClose={() => setShowAuth(false)}
           onAuth={() => {
             setShowAuth(false);
-            setToast("Bun venit!");
+            setToast(t("toast.welcome"));
           }}
         />
       )}
@@ -780,7 +780,7 @@ export default function Home() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">Titlu</label>
+                <label className="block text-sm font-medium mb-1.5">{t("form.name")}</label>
                 <input
                   type="text"
                   required
@@ -792,7 +792,7 @@ export default function Home() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1.5">Descriere</label>
+                <label className="block text-sm font-medium mb-1.5">{t("form.description")}</label>
                 <textarea
                   placeholder="Spune mai multe despre activitate..."
                   rows={3}
@@ -803,7 +803,7 @@ export default function Home() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1.5">Categorie</label>
+                <label className="block text-sm font-medium mb-1.5">{t("form.category")}</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {CATEGORIES.map((cat) => (
                     <button
@@ -825,7 +825,7 @@ export default function Home() {
                   <input
                     type="text"
                     required
-                    placeholder="Scrie categoria ta..."
+                    placeholder={t("form.customCategory")}
                     value={form.customCategory}
                     onChange={(e) => setForm({ ...form, customCategory: e.target.value })}
                     className="mt-2 w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
@@ -835,7 +835,7 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Locație</label>
+                  <label className="block text-sm font-medium mb-1.5">{t("form.location")}</label>
                   <input
                     type="text"
                     required
@@ -846,7 +846,7 @@ export default function Home() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Max persoane</label>
+                  <label className="block text-sm font-medium mb-1.5">{t("form.maxPeople")}</label>
                   <input
                     type="number"
                     min={2}
@@ -861,7 +861,7 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Vârstă minimă</label>
+                  <label className="block text-sm font-medium mb-1.5">{t("form.minAge")}</label>
                   <input
                     type="number"
                     min={5}
@@ -873,7 +873,7 @@ export default function Home() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Vârstă maximă</label>
+                  <label className="block text-sm font-medium mb-1.5">{t("form.maxAge")}</label>
                   <input
                     type="number"
                     min={5}
@@ -887,32 +887,32 @@ export default function Home() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1.5">Data</label>
+                <label className="block text-sm font-medium mb-1.5">{t("form.date")}</label>
                 <div className="grid grid-cols-3 gap-2">
                   <select required value={dateFields.day} onChange={(e) => setDateFields({ ...dateFields, day: e.target.value })} className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
-                    <option value="">Zi</option>
+                    <option value="">{t("date.day")}</option>
                     {Array.from({ length: 31 }, (_, i) => (<option key={i + 1} value={String(i + 1)}>{i + 1}</option>))}
                   </select>
                   <select required value={dateFields.month} onChange={(e) => setDateFields({ ...dateFields, month: e.target.value })} className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
-                    <option value="">Luna</option>
-                    {["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => (<option key={i + 1} value={String(i + 1)}>{m}</option>))}
+                    <option value="">{t("date.month")}</option>
+                    {t("date.months").split(",").map((m, i) => (<option key={i + 1} value={String(i + 1)}>{m}</option>))}
                   </select>
                   <select required value={dateFields.year} onChange={(e) => setDateFields({ ...dateFields, year: e.target.value })} className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
-                    <option value="">An</option>
+                    <option value="">{t("date.year")}</option>
                     {[2026, 2027].map((y) => (<option key={y} value={String(y)}>{y}</option>))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1.5">Ora</label>
+                <label className="block text-sm font-medium mb-1.5">{t("form.time")}</label>
                 <div className="grid grid-cols-2 gap-2">
                   <select required value={dateFields.hour} onChange={(e) => setDateFields({ ...dateFields, hour: e.target.value })} className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
-                    <option value="">Ora</option>
+                    <option value="">{t("date.hour")}</option>
                     {Array.from({ length: 24 }, (_, i) => (<option key={i} value={String(i)}>{String(i).padStart(2, "0")}</option>))}
                   </select>
                   <select required value={dateFields.minute} onChange={(e) => setDateFields({ ...dateFields, minute: e.target.value })} className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
-                    <option value="">Min</option>
+                    <option value="">{t("date.minute")}</option>
                     {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (<option key={m} value={String(m)}>{String(m).padStart(2, "0")}</option>))}
                   </select>
                 </div>
@@ -939,7 +939,7 @@ export default function Home() {
                 disabled={submitting}
                 className="w-full mt-2 py-3.5 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-semibold text-sm hover:shadow-lg hover:shadow-primary/25 transition-all active:scale-[0.98] disabled:opacity-50"
               >
-                {submitting ? "Se publică..." : "Publică activitatea"}
+                {submitting ? t("form.publishing") : t("form.publish")}
               </button>
             </form>
           </div>

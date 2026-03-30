@@ -205,6 +205,36 @@ const translations = {
   // Chat
   "chat.placeholder": { ro: "Scrie un mesaj...", en: "Write a message..." },
   "chat.login": { ro: "Intră în cont pentru a trimite mesaje.", en: "Login to send messages." },
+  "chat.empty": { ro: "Niciun mesaj încă", en: "No messages yet" },
+
+  // Extra
+  "misc.anonymous": { ro: "Anonim", en: "Anonymous" },
+  "misc.error": { ro: "Eroare", en: "Error" },
+  "misc.onlyImages": { ro: "Doar imagini sunt permise.", en: "Only images are allowed." },
+  "misc.maxSize": { ro: "Max 2MB.", en: "Max 2MB." },
+  "misc.minChars": { ro: "Minim 6 caractere.", en: "Minimum 6 characters." },
+  "misc.pwdNoMatch": { ro: "Parolele nu se potrivesc.", en: "Passwords don't match." },
+  "misc.backHome": { ro: "Înapoi acasă", en: "Back home" },
+  "misc.notFound": { ro: "Activitatea nu a fost găsită", en: "Activity not found" },
+  "misc.notFoundDesc": { ro: "Poate a fost ștearsă sau link-ul e greșit.", en: "It may have been deleted or the link is wrong." },
+  "misc.map": { ro: "Hartă", en: "Map" },
+  "misc.mapEmpty": { ro: "Nicio activitate pe hartă", en: "No activities on the map" },
+  "misc.mapEmptyDesc": { ro: "Activitățile cu coordonate GPS vor apărea aici.", en: "Activities with GPS coordinates will appear here." },
+  "misc.copyLink": { ro: "Copiază link", en: "Copy link" },
+  "misc.shareWA": { ro: "Trimite pe WhatsApp", en: "Share on WhatsApp" },
+  "misc.deleteActivity": { ro: "Șterge activitatea", en: "Delete activity" },
+  "misc.reportTitle": { ro: "Raportează — nu a venit", en: "Report — didn't show up" },
+  "misc.details": { ro: "Detalii", en: "Details" },
+  "misc.in": { ro: "în", en: "in" },
+  "misc.for": { ro: "pentru", en: "for" },
+  "misc.friendReqSent": { ro: "Cerere trimisă!", en: "Request sent!" },
+  "misc.friendReqDup": { ro: "Cerere deja trimisă.", en: "Request already sent." },
+  "misc.friendNotFound": { ro: "Utilizatorul nu există.", en: "User not found." },
+  "misc.friendAccepted": { ro: "Prieten acceptat!", en: "Friend accepted!" },
+  "misc.friendRemoved": { ro: "Prieten eliminat.", en: "Friend removed." },
+
+  // Date months
+  "date.months": { ro: "Ian,Feb,Mar,Apr,Mai,Iun,Iul,Aug,Sep,Oct,Nov,Dec", en: "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec" },
 } as const;
 
 type TranslationKey = keyof typeof translations;

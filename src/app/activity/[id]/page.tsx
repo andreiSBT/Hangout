@@ -245,7 +245,7 @@ export default function ActivityPage() {
       window.open(`https://wa.me/?text=${encodeURIComponent(text + "\n" + url)}`, "_blank");
     } else if (platform === "copy") {
       navigator.clipboard.writeText(url);
-      setToast("Link copiat!");
+      setToast(t("toast.linkCopied"));
     }
   }
 
@@ -279,13 +279,13 @@ export default function ActivityPage() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 animate-fade-in">
         <div className="text-6xl mb-2">😕</div>
-        <h2 className="text-2xl font-bold">Activitatea nu a fost găsită</h2>
-        <p className="text-muted">Poate a fost ștearsă sau link-ul e greșit.</p>
+        <h2 className="text-2xl font-bold">{t("misc.notFound")}</h2>
+        <p className="text-muted">{t("misc.notFoundDesc")}</p>
         <button
           onClick={() => router.push("/")}
           className="mt-4 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-full font-semibold hover:shadow-lg transition-all active:scale-95"
         >
-          Înapoi acasă
+          {t("misc.backHome")}
         </button>
       </div>
     );
@@ -308,13 +308,13 @@ export default function ActivityPage() {
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="text-sm font-medium">Înapoi</span>
+            <span className="text-sm font-medium">{t("nav.back")}</span>
           </button>
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleShare("copy")}
               className="w-9 h-9 rounded-full bg-background border border-border flex items-center justify-center text-muted hover:text-foreground transition-all active:scale-90"
-              title="Copiază link"
+              title={t("misc.copyLink")}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -323,7 +323,7 @@ export default function ActivityPage() {
             <button
               onClick={() => handleShare("whatsapp")}
               className="w-9 h-9 rounded-full bg-background border border-border flex items-center justify-center text-muted hover:text-foreground transition-all active:scale-90"
-              title="Trimite pe WhatsApp"
+              title={t("misc.shareWA")}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -365,7 +365,7 @@ export default function ActivityPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Locație
+                {t("detail.location")}
               </div>
               <div className="text-sm font-bold">{activity.location}</div>
             </div>
@@ -374,21 +374,21 @@ export default function ActivityPage() {
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                Vârstă
+                {t("detail.age")}
               </div>
-              <div className="text-sm font-bold">{activity.min_age}–{activity.max_age} ani</div>
+              <div className="text-sm font-bold">{activity.min_age}–{activity.max_age} {t("activity.age")}</div>
             </div>
             <div className="bg-background rounded-xl p-4">
               <div className="flex items-center gap-1.5 text-xs text-muted mb-1.5">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Locuri
+                {t("detail.spots")}
               </div>
               <div className="text-sm font-bold">
                 {participants.length}/{activity.max_people}
                 {spotsLeft <= 3 && spotsLeft > 0 && (
-                  <span className="text-primary ml-1">({spotsLeft} {spotsLeft === 1 ? "liber" : "libere"})</span>
+                  <span className="text-primary ml-1">({spotsLeft} {t("detail.free")})</span>
                 )}
               </div>
             </div>
@@ -397,7 +397,7 @@ export default function ActivityPage() {
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Organizator
+                {t("detail.organizer")}
               </div>
               <div className="text-sm font-bold">{activity.created_by}</div>
             </div>
@@ -420,29 +420,29 @@ export default function ActivityPage() {
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                Participi la această activitate
+                {t("detail.joinedMsg")}
               </div>
               <button
                 onClick={handleLeave}
                 className="px-4 py-2.5 sm:py-3 rounded-xl border border-border text-sm font-medium text-muted hover:text-danger hover:border-danger/30 hover:bg-danger-light transition-all active:scale-95 text-center"
               >
-                Părăsește
+                {t("activity.leave")}
               </button>
             </div>
           ) : isFull ? (
             <div className="px-5 py-3 rounded-xl bg-background text-muted font-semibold text-sm text-center">
-              Toate locurile sunt ocupate
+              {t("detail.fullMsg")}
             </div>
           ) : user ? (
             <button
               onClick={handleJoin}
               className="w-full py-3.5 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/25 transition-all active:scale-[0.98]"
             >
-              Participă la activitate
+              {t("detail.joinBtn")}
             </button>
           ) : (
             <div className="px-5 py-3 rounded-xl bg-background text-muted text-sm text-center">
-              Intră în cont pentru a participa.
+              {t("detail.loginMsg")}
             </div>
           )}
         </div>
@@ -454,7 +454,7 @@ export default function ActivityPage() {
               <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              Participanți ({participants.length})
+              {t("detail.participants")} ({participants.length})
             </h2>
             <div className="flex flex-wrap gap-2">
               {participants.map((p, i) => {
@@ -472,7 +472,7 @@ export default function ActivityPage() {
                       <button
                         onClick={() => handleReport(p.name)}
                         className="ml-1 text-muted hover:text-danger transition-colors opacity-0 group-hover/part:opacity-100"
-                        title="Raportează — nu a venit"
+                        title={t("misc.reportTitle")}
                       >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2z" />
@@ -542,7 +542,7 @@ export default function ActivityPage() {
               <>
                 <div className="space-y-3 mb-4 max-h-80 overflow-y-auto">
                   {messages.length === 0 && (
-                    <div className="text-center py-6 text-sm text-muted">🗨️ {lang === "ro" ? "Niciun mesaj încă" : "No messages yet"}</div>
+                    <div className="text-center py-6 text-sm text-muted">🗨️ {t("chat.empty")}</div>
                   )}
                   {messages.map((m) => {
                     const isMe = m.username === username;

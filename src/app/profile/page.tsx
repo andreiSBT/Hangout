@@ -89,8 +89,8 @@ export default function ProfilePage() {
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    if (!file.type.startsWith("image/")) { setToast("Doar imagini sunt permise."); return; }
-    if (file.size > 2 * 1024 * 1024) { setToast("Max 2MB."); return; }
+    if (!file.type.startsWith("image/")) { setToast(t("misc.onlyImages")); return; }
+    if (file.size > 2 * 1024 * 1024) { setToast(t("misc.maxSize")); return; }
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `${user.id}/avatar.${ext}`;
@@ -117,8 +117,8 @@ export default function ProfilePage() {
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     setPasswordError("");
-    if (newPassword.length < 6) { setPasswordError("Minim 6 caractere."); return; }
-    if (newPassword !== confirmPassword) { setPasswordError("Parolele nu se potrivesc."); return; }
+    if (newPassword.length < 6) { setPasswordError(t("misc.minChars")); return; }
+    if (newPassword !== confirmPassword) { setPasswordError(t("misc.pwdNoMatch")); return; }
     setChangingPassword(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setChangingPassword(false);
@@ -213,7 +213,7 @@ export default function ProfilePage() {
                 <div className="w-9 h-9 rounded-lg bg-success/10 flex items-center justify-center">
                   <span className="text-base font-bold text-success">{points}</span>
                 </div>
-                <div className="text-xs text-muted leading-tight">Puncte</div>
+                <div className="text-xs text-muted leading-tight">{lang === "en" ? "Points" : "Puncte"}</div>
               </div>
             </div>
             <button
