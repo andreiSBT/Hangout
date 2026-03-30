@@ -36,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="ro" className={`${geistSans.variable} h-full antialiased`}>
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `try{if(localStorage.getItem("hangout-dark")==="true")document.documentElement.classList.add("dark")}catch(e){}`,
