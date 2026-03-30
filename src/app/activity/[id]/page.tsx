@@ -338,7 +338,7 @@ export default function ActivityPage() {
         <div className="bg-surface rounded-2xl border border-border p-6 sm:p-8 mb-6 animate-fade-in">
           <div className="flex flex-wrap items-center gap-2 mb-5">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-background rounded-xl text-sm font-medium text-muted">
-              {cat.icon} {cat.label}
+              {cat.icon} {lang === "en" ? cat.labelEn : cat.label}
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-light rounded-xl text-sm font-medium text-primary">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

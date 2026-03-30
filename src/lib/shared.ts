@@ -26,14 +26,14 @@ export type Comment = {
 };
 
 export const CATEGORIES = [
-  { value: "sport", label: "Sport", icon: "⚽" },
-  { value: "board-games", label: "Board Games", icon: "🎲" },
-  { value: "outdoor", label: "În aer liber", icon: "🌳" },
-  { value: "music", label: "Muzică", icon: "🎵" },
-  { value: "art", label: "Artă", icon: "🎨" },
-  { value: "food", label: "Mâncare", icon: "🍕" },
-  { value: "study", label: "Învățare", icon: "📚" },
-  { value: "other", label: "Altele", icon: "✨" },
+  { value: "sport", label: "Sport", labelEn: "Sports", icon: "⚽" },
+  { value: "board-games", label: "Board Games", labelEn: "Board Games", icon: "🎲" },
+  { value: "outdoor", label: "În aer liber", labelEn: "Outdoor", icon: "🌳" },
+  { value: "music", label: "Muzică", labelEn: "Music", icon: "🎵" },
+  { value: "art", label: "Artă", labelEn: "Art", icon: "🎨" },
+  { value: "food", label: "Mâncare", labelEn: "Food", icon: "🍕" },
+  { value: "study", label: "Învățare", labelEn: "Study", icon: "📚" },
+  { value: "other", label: "Altele", labelEn: "Other", icon: "✨" },
 ];
 
 export function getCategoryInfo(value: string) {

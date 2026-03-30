@@ -317,6 +317,7 @@ export default function Home() {
         a.location.toLowerCase().includes(s) ||
         a.created_by.toLowerCase().includes(s) ||
         cat.label.toLowerCase().includes(s) ||
+        cat.labelEn.toLowerCase().includes(s) ||
         dateStr.includes(s) ||
         (a.description?.toLowerCase().includes(s) ?? false)
       );
@@ -454,7 +455,7 @@ export default function Home() {
                     : "bg-surface text-muted hover:bg-surface-hover border border-border"
                 }`}
               >
-                {cat.icon} {cat.label}
+                {cat.icon} {lang === "en" ? cat.labelEn : cat.label}
               </button>
             ))}
             {/* Advanced filters toggle */}
@@ -568,7 +569,7 @@ export default function Home() {
 
                     <div className="flex items-start justify-between mb-3">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-background rounded-lg text-xs font-medium text-muted">
-                        {cat.icon} {cat.label}
+                        {cat.icon} {lang === "en" ? cat.labelEn : cat.label}
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-primary">

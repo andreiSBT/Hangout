@@ -391,7 +391,7 @@ export default function ProfilePage() {
                   return (
                     <button key={activity.id} onClick={() => router.push(`/activity/${activity.id}`)} className={`w-full text-left bg-surface rounded-xl border border-border p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-slide-up group ${isPast ? "opacity-50" : ""}`} style={{ animationDelay: `${i * 50}ms` }}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-background rounded-lg text-xs font-medium text-muted">{cat.icon} {cat.label}</span>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-background rounded-lg text-xs font-medium text-muted">{cat.icon} {lang === "en" ? cat.labelEn : cat.label}</span>
                         <span className={`text-xs font-medium ${isPast ? "text-muted" : "text-primary"}`}>{isPast ? t("activity.past") : formatDate(activity.date)}</span>
                       </div>
                       <h3 className="font-bold group-hover:text-primary transition-colors">{activity.title}</h3>
