@@ -209,29 +209,35 @@ export default function Home() {
     const { day, month, year, hour, minute } = dateFields;
     const dateStr = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:00`;
     const { customCategory, recurrence, ...formData } = form;
-
-    // Translate title and description to English
-    const [titleEn, descEn] = await Promise.all([
-      translateText(form.title, "ro", "en"),
-      form.description ? translateText(form.description, "ro", "en") : Promise.resolve(""),
-    ]);
-
     const insertData = {
       ...formData,
       category: form.category === "other" && customCategory ? customCategory : form.category,
       date: dateStr,
       user_id: user?.id,
       recurrence: recurrence || null,
-      title_en: titleEn || null,
-      description_en: descEn || null,
     };
-    const { error } = await supabase
+    const { data: inserted, error } = await supabase
       .from("hangout_activities")
-      .insert([insertData]);
+      .insert([insertData])
+      .select("id")
+      .single();
     setSubmitting(false);
     if (error) {
       setFormError(error.message);
       return;
+    }
+
+    // Translate in background (don't block publish)
+    if (inserted) {
+      translateText(form.title, "ro", "en").then(async (titleEn) => {
+        const descEn = form.description ? await translateText(form.description, "ro", "en") : "";
+        if (titleEn) {
+          await supabase.from("hangout_activities").update({
+            title_en: titleEn,
+            description_en: descEn || null,
+          }).eq("id", inserted.id);
+        }
+      });
     }
     setForm({
       title: "",
