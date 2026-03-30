@@ -3,10 +3,20 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Activity, CATEGORIES, getCategoryInfo, formatDate } from "@/lib/shared";
+import { Activity, CATEGORIES, getCategoryInfo, formatDate, timeAgo } from "@/lib/shared";
 import AuthModal from "@/components/AuthModal";
 import Avatar from "@/components/Avatar";
+import { useI18n } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
+
+type FeedItem = {
+  id: string;
+  username: string;
+  action: string;
+  activity_title: string | null;
+  activity_id: string | null;
+  created_at: string;
+};
 
 type Participant = {
   activity_id: string;
@@ -55,6 +65,7 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 
 export default function Home() {
   const router = useRouter();
+  const { t, lang } = useI18n();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [participantCounts, setParticipantCounts] = useState<
     Record<string, number>
@@ -71,6 +82,11 @@ export default function Home() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [rare] = useState(() => Math.random() < 0.001);
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [ageFilter, setAgeFilter] = useState("");
 
   const [form, setForm] = useState({
     title: "",
@@ -82,6 +98,7 @@ export default function Home() {
     min_age: 10,
     max_age: 99,
     created_by: "",
+    recurrence: "",
   });
 
   const [dateFields, setDateFields] = useState({
@@ -161,6 +178,14 @@ export default function Home() {
         setJoinedIds(myJoined);
       }
     }
+    // Fetch feed
+    const { data: feedData } = await supabase
+      .from("hangout_feed")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (feedData) setFeed(feedData);
+
     setLoading(false);
   }
 
@@ -182,12 +207,13 @@ export default function Home() {
     setSubmitting(true);
     const { day, month, year, hour, minute } = dateFields;
     const dateStr = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:00`;
-    const { customCategory, ...formData } = form;
+    const { customCategory, recurrence, ...formData } = form;
     const insertData = {
       ...formData,
       category: form.category === "other" && customCategory ? customCategory : form.category,
       date: dateStr,
       user_id: user?.id,
+      recurrence: recurrence || null,
     };
     const { error } = await supabase
       .from("hangout_activities")
@@ -207,10 +233,13 @@ export default function Home() {
       min_age: 10,
       max_age: 99,
       created_by: "",
+      recurrence: "",
     });
     setDateFields({ day: "", month: "", year: "", hour: "", minute: "" });
     setShowForm(false);
-    setToast("Activitate publicată!");
+    // Feed entry
+    await supabase.from("hangout_feed").insert([{ username, action: "created", activity_title: form.title }]);
+    setToast(t("toast.published"));
     fetchActivities();
   }
 
@@ -229,9 +258,10 @@ export default function Home() {
         ...prev,
         [activityId]: (prev[activityId] || 0) + 1,
       }));
-      // +10 puncte
       await supabase.rpc("add_points", { user_username: username, amount: 10 });
-      setToast("Te-ai alăturat! +10 puncte");
+      const act = activities.find((a) => a.id === activityId);
+      if (act) await supabase.from("hangout_feed").insert([{ username, action: "joined", activity_id: activityId, activity_title: act.title }]);
+      setToast(t("toast.joined"));
     }
   }
 
@@ -290,6 +320,15 @@ export default function Home() {
         dateStr.includes(s) ||
         (a.description?.toLowerCase().includes(s) ?? false)
       );
+    })
+    .filter((a) => {
+      if (dateFrom && new Date(a.date) < new Date(dateFrom)) return false;
+      if (dateTo && new Date(a.date) > new Date(dateTo + "T23:59:59")) return false;
+      if (ageFilter) {
+        const age = parseInt(ageFilter);
+        if (!isNaN(age) && (age < a.min_age || age > a.max_age)) return false;
+      }
+      return true;
     });
 
   return (
@@ -412,12 +451,57 @@ export default function Home() {
                 {cat.icon} {cat.label}
               </button>
             ))}
+            {/* Advanced filters toggle */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-95 ${showFilters ? "bg-primary text-white" : "bg-surface text-muted hover:bg-surface-hover border border-border"}`}
+            >
+              <svg className="w-3.5 h-3.5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+              {t("filter.advanced")}
+            </button>
           </div>
+
+          {/* Advanced filters panel */}
+          {showFilters && (
+            <div className="animate-slide-up mt-4 max-w-md mx-auto flex flex-wrap gap-2 justify-center">
+              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="px-3 py-2 rounded-xl border border-border bg-surface text-xs focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder={t("filter.dateFrom")} />
+              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="px-3 py-2 rounded-xl border border-border bg-surface text-xs focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder={t("filter.dateTo")} />
+              <input type="number" value={ageFilter} onChange={(e) => setAgeFilter(e.target.value)} placeholder={t("filter.ageRange")} min={5} max={99} className="px-3 py-2 rounded-xl border border-border bg-surface text-xs w-20 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              {(dateFrom || dateTo || ageFilter) && (
+                <button onClick={() => { setDateFrom(""); setDateTo(""); setAgeFilter(""); }} className="px-3 py-2 rounded-xl text-xs font-medium text-danger hover:bg-danger-light transition-all">
+                  {t("filter.clear")}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
       {/* Activities */}
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-10">
+        {/* Feed */}
+        {feed.length > 0 && !search && !filter && (
+          <div className="mb-8 animate-fade-in">
+            <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">{t("feed.title")}</h2>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+              {feed.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => f.activity_id && router.push(`/activity/${f.activity_id}`)}
+                  className="flex-shrink-0 bg-surface border border-border rounded-xl p-3 text-left hover:shadow-md transition-all max-w-[200px]"
+                >
+                  <div className="text-xs text-muted mb-1">{timeAgo(f.created_at)}</div>
+                  <div className="text-sm">
+                    <span className="font-semibold">{f.username}</span>{" "}
+                    <span className="text-muted">{f.action === "joined" ? t("feed.joined") : t("feed.created")}</span>{" "}
+                    <span className="font-medium text-primary">{f.activity_title}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -815,6 +899,16 @@ export default function Home() {
                     {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (<option key={m} value={String(m)}>{String(m).padStart(2, "0")}</option>))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1.5">{t("form.recurrence")}</label>
+                <select value={form.recurrence} onChange={(e) => setForm({ ...form, recurrence: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
+                  <option value="">{t("form.recNone")}</option>
+                  <option value="weekly">{t("form.recWeekly")}</option>
+                  <option value="biweekly">{t("form.recBiweekly")}</option>
+                  <option value="monthly">{t("form.recMonthly")}</option>
+                </select>
               </div>
 
               {formError && (
