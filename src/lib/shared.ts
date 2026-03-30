@@ -14,6 +14,8 @@ export type Activity = {
   recurrence: string | null;
   lat: number | null;
   lng: number | null;
+  title_en: string | null;
+  description_en: string | null;
 };
 
 export type Comment = {

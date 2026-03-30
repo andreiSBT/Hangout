@@ -349,12 +349,12 @@ export default function ActivityPage() {
           </div>
 
           <h1 className="text-xl sm:text-3xl font-extrabold mb-3 leading-tight">
-            {activity.title}
+            {lang === "en" && activity.title_en ? activity.title_en : activity.title}
           </h1>
 
           {activity.description && (
             <p className="text-muted mb-6 leading-relaxed text-[15px]">
-              {activity.description}
+              {lang === "en" && activity.description_en ? activity.description_en : activity.description}
             </p>
           )}
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Activity, CATEGORIES, getCategoryInfo, formatDate, timeAgo } from "@/lib/shared";
+import { translateText } from "@/lib/translate";
 import AuthModal from "@/components/AuthModal";
 import Avatar from "@/components/Avatar";
 import { useI18n } from "@/lib/i18n";
@@ -208,12 +209,21 @@ export default function Home() {
     const { day, month, year, hour, minute } = dateFields;
     const dateStr = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:00`;
     const { customCategory, recurrence, ...formData } = form;
+
+    // Translate title and description to English
+    const [titleEn, descEn] = await Promise.all([
+      translateText(form.title, "ro", "en"),
+      form.description ? translateText(form.description, "ro", "en") : Promise.resolve(""),
+    ]);
+
     const insertData = {
       ...formData,
       category: form.category === "other" && customCategory ? customCategory : form.category,
       date: dateStr,
       user_id: user?.id,
       recurrence: recurrence || null,
+      title_en: titleEn || null,
+      description_en: descEn || null,
     };
     const { error } = await supabase
       .from("hangout_activities")
@@ -593,11 +603,11 @@ export default function Home() {
                     </div>
 
                     <h3 className="text-lg font-bold mb-1 leading-snug group-hover:text-primary transition-colors">
-                      {activity.title}
+                      {lang === "en" && activity.title_en ? activity.title_en : activity.title}
                     </h3>
                     {activity.description && (
                       <p className="text-sm text-muted mb-3 line-clamp-2">
-                        {activity.description}
+                        {lang === "en" && activity.description_en ? activity.description_en : activity.description}
                       </p>
                     )}
 

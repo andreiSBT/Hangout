@@ -394,7 +394,7 @@ export default function ProfilePage() {
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-background rounded-lg text-xs font-medium text-muted">{cat.icon} {lang === "en" ? cat.labelEn : cat.label}</span>
                         <span className={`text-xs font-medium ${isPast ? "text-muted" : "text-primary"}`}>{isPast ? t("activity.past") : formatDate(activity.date)}</span>
                       </div>
-                      <h3 className="font-bold group-hover:text-primary transition-colors">{activity.title}</h3>
+                      <h3 className="font-bold group-hover:text-primary transition-colors">{lang === "en" && activity.title_en ? activity.title_en : activity.title}</h3>
                       <div className="flex items-center gap-1.5 text-sm text-muted mt-1">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         {activity.location}
