@@ -216,11 +216,9 @@ export default function Home() {
       user_id: user?.id,
       recurrence: recurrence || null,
     };
-    const { data: inserted, error } = await supabase
+    const { error } = await supabase
       .from("hangout_activities")
-      .insert([insertData])
-      .select("id")
-      .single();
+      .insert([insertData]);
     setSubmitting(false);
     if (error) {
       setFormError(error.message);
@@ -228,17 +226,16 @@ export default function Home() {
     }
 
     // Translate in background (don't block publish)
-    if (inserted) {
-      translateText(form.title, "ro", "en").then(async (titleEn) => {
-        const descEn = form.description ? await translateText(form.description, "ro", "en") : "";
-        if (titleEn) {
-          await supabase.from("hangout_activities").update({
-            title_en: titleEn,
-            description_en: descEn || null,
-          }).eq("id", inserted.id);
-        }
-      });
-    }
+    const title = form.title;
+    const desc = form.description;
+    translateText(title, "ro", "en").then(async (titleEn) => {
+      if (!titleEn) return;
+      const descEn = desc ? await translateText(desc, "ro", "en") : null;
+      await supabase.from("hangout_activities")
+        .update({ title_en: titleEn, description_en: descEn })
+        .eq("title", title)
+        .eq("user_id", user?.id);
+    });
     setForm({
       title: "",
       description: "",
