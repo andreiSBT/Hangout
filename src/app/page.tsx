@@ -67,6 +67,7 @@ export default function Home() {
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [rare] = useState(() => Math.random() < 0.001);
@@ -99,6 +100,7 @@ export default function Home() {
       let uname: string | null = null;
       if (data.user) uname = await fetchUsername(data.user.id);
       fetchActivities(uname);
+      setAuthReady(true);
       setTimeout(() => { ignoreFirstEvent = false; }, 100);
     });
 
@@ -301,16 +303,16 @@ export default function Home() {
             <span className="text-xl font-bold tracking-tight hidden sm:block">Hangout</span>
           </button>
           <div className="flex items-center gap-2 sm:gap-3">
-            {user ? (
-              <>
-                <button
-                  onClick={() => router.push("/profile")}
-                  className="hover:shadow-lg hover:shadow-primary/25 transition-all active:scale-90 ring-2 ring-background rounded-full"
-                  title="Profilul meu"
-                >
-                  <Avatar src={avatarUrl} name={username} size="md" />
-                </button>
-              </>
+            {!authReady ? (
+              <div className="w-9 h-9" />
+            ) : user ? (
+              <button
+                onClick={() => router.push("/profile")}
+                className="hover:shadow-lg hover:shadow-primary/25 transition-all active:scale-90 ring-2 ring-background rounded-full"
+                title="Profilul meu"
+              >
+                <Avatar src={avatarUrl} name={username} size="md" />
+              </button>
             ) : (
               <button
                 onClick={() => setShowAuth(true)}
