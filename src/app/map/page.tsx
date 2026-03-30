@@ -11,7 +11,7 @@ const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
 export default function MapPage() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,7 +36,7 @@ export default function MapPage() {
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             <span className="text-sm font-medium">{t("nav.back")}</span>
           </button>
-          <span className="text-lg font-bold">Hartă</span>
+          <span className="text-lg font-bold">{lang === "ro" ? "Hartă" : "Map"}</span>
           <div className="w-16" />
         </div>
       </header>
@@ -49,8 +49,8 @@ export default function MapPage() {
         ) : activities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
             <div className="text-5xl mb-4">🗺️</div>
-            <h3 className="text-xl font-bold mb-2">Nicio activitate pe hartă</h3>
-            <p className="text-muted text-sm">Activitățile cu coordonate GPS vor apărea aici.</p>
+            <h3 className="text-xl font-bold mb-2">{lang === "ro" ? "Nicio activitate pe hartă" : "No activities on the map"}</h3>
+            <p className="text-muted text-sm">{lang === "ro" ? "Activitățile cu coordonate GPS vor apărea aici." : "Activities with GPS coordinates will appear here."}</p>
           </div>
         ) : (
           <MapView activities={activities} onSelect={(id) => router.push(`/activity/${id}`)} />

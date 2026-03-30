@@ -139,7 +139,7 @@ export default function ActivityPage() {
     if (!error) {
       setJoined(true);
       await supabase.rpc("add_points", { user_username: username, amount: 10 });
-      setToast("Te-ai alăturat! +10 puncte");
+      setToast(t("toast.joined"));
       fetchAll();
     }
   }
@@ -154,7 +154,7 @@ export default function ActivityPage() {
     if (!error) {
       setJoined(false);
       await supabase.rpc("add_points", { user_username: username, amount: -10 });
-      setToast("Ai părăsit activitatea. -10 puncte");
+      setToast(t("toast.left"));
       fetchAll();
     }
   }
@@ -177,7 +177,7 @@ export default function ActivityPage() {
     const { error } = await supabase.from("hangout_comments").delete().eq("id", commentId);
     if (!error) {
       setComments((prev) => prev.filter((c) => c.id !== commentId));
-      setToast("Comentariu șters.");
+      setToast(t("toast.commentDeleted"));
     }
   }
 
@@ -192,7 +192,7 @@ export default function ActivityPage() {
       }]);
     if (error) {
       if (error.code === "23505") {
-        setToast("Ai raportat deja acest participant.");
+        setToast(t("toast.alreadyReported"));
       } else {
         setToast("Eroare: " + error.message);
       }
@@ -200,7 +200,7 @@ export default function ActivityPage() {
     }
     // -15 puncte celui raportat
     await supabase.rpc("add_points", { user_username: reportedUsername, amount: -15 });
-    setToast(`${reportedUsername} a fost raportat. -15 puncte`);
+    setToast(`${reportedUsername} ${t("toast.reported")}`);
   }
 
   async function handleSendMessage(e: React.FormEvent) {

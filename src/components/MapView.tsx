@@ -50,7 +50,7 @@ export default function MapView({ activities, onSelect }: Props) {
                   onClick={() => onSelect(a.id)}
                   className="mt-2 px-3 py-1 bg-orange-500 text-white rounded-lg text-xs font-semibold"
                 >
-                  Detalii →
+                  Details →
                 </button>
               </div>
             </Popup>

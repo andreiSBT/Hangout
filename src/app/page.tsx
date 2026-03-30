@@ -284,7 +284,7 @@ export default function Home() {
       }));
       // -10 puncte
       await supabase.rpc("add_points", { user_username: username, amount: -10 });
-      setToast("Ai părăsit activitatea. -10 puncte");
+      setToast(t("toast.left"));
     }
   }
 
@@ -394,14 +394,13 @@ export default function Home() {
         />
         <div className="max-w-5xl mx-auto text-center relative">
           <h1 className="animate-fade-in text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
-            {rare ? "Ieși din casă." : "Ieși din casă."}{" "}
+            {t("hero.title1")}{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-              {rare ? "Atinge iarbă." : "Fă-ți prieteni."}
+              {rare ? t("hero.title2rare") : t("hero.title2")}
             </span>
           </h1>
           <p className="animate-slide-up mt-4 sm:mt-5 text-base sm:text-xl text-muted max-w-2xl mx-auto leading-relaxed">
-            Propune o activitate, găsește oameni din zona ta și socializează în
-            viața reală — nu doar online.
+            {t("hero.subtitle")}
           </p>
 
           {/* Search */}
@@ -418,7 +417,7 @@ export default function Home() {
               </svg>
               <input
                 type="text"
-                placeholder="Caută după nume, locație, categorie, dată..."
+                placeholder={t("hero.search")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 rounded-2xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary shadow-sm transition-all"
@@ -443,7 +442,7 @@ export default function Home() {
                   : "bg-surface text-muted hover:bg-surface-hover border border-border"
               }`}
             >
-              Toate
+              {t("hero.all")}
             </button>
             {CATEGORIES.map((cat) => (
               <button
@@ -519,19 +518,19 @@ export default function Home() {
           <div className="text-center py-20 animate-fade-in">
             <div className="text-5xl sm:text-6xl mb-4 sm:mb-5">{search ? "🔍" : "🌅"}</div>
             <h3 className="text-xl sm:text-2xl font-bold mb-2">
-              {search ? "Niciun rezultat" : "Nicio activitate încă"}
+              {search ? t("activity.noResults") : t("activity.none")}
             </h3>
             <p className="text-muted mb-8 max-w-sm mx-auto">
               {search
-                ? `Nu am găsit nimic pentru "${search}". Încearcă alt termen.`
-                : "Fii primul care propune ceva! Comunitatea ta așteaptă."}
+                ? `"${search}"`
+                : t("activity.noneDesc")}
             </p>
             {!search && (
               <button
                 onClick={handlePropune}
                 className="px-8 py-3.5 bg-gradient-to-r from-primary to-secondary text-white rounded-full font-semibold hover:shadow-xl hover:shadow-primary/25 transition-all active:scale-95"
               >
-                Propune o activitate
+                {t("activity.propose")}
               </button>
             )}
           </div>
@@ -563,7 +562,7 @@ export default function Home() {
                     {/* Urgency badge */}
                     {spotsLeft <= 2 && spotsLeft > 0 && !joined && (
                       <div className="absolute top-0 right-0 bg-gradient-to-l from-primary to-primary/80 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">
-                        {spotsLeft === 1 ? "Ultimul loc!" : `Doar ${spotsLeft} locuri`}
+                        {spotsLeft === 1 ? t("activity.lastSpot") : `${spotsLeft} ${t("activity.spots")}`}
                       </div>
                     )}
 
@@ -656,12 +655,12 @@ export default function Home() {
                           <svg className="w-3 h-3 hidden group-hover/leave:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                           </svg>
-                          <span className="group-hover/leave:hidden">Participi</span>
-                          <span className="hidden group-hover/leave:inline">Părăsește</span>
+                          <span className="group-hover/leave:hidden">{t("activity.joined")}</span>
+                          <span className="hidden group-hover/leave:inline">{t("activity.leave")}</span>
                         </button>
                       ) : isFull ? (
                         <span className="px-3 py-1.5 rounded-full text-xs font-semibold text-muted bg-background">
-                          Complet
+                          {t("activity.full")}
                         </span>
                       ) : (
                         <button
@@ -671,7 +670,7 @@ export default function Home() {
                           }}
                           className="px-4 py-1.5 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-primary to-primary-dark hover:shadow-md hover:shadow-primary/25 transition-all active:scale-95"
                         >
-                          Participă
+                          {t("activity.join")}
                         </button>
                       )}
                     </div>
@@ -693,7 +692,7 @@ export default function Home() {
             <span className="font-bold">Hangout</span>
           </div>
           <p className="text-sm text-muted">
-            Făcut cu drag pentru o lume mai conectată.
+            {t("footer.text")}
           </p>
         </div>
       </footer>
@@ -714,22 +713,22 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold mb-1">Șterge activitatea?</h3>
+            <h3 className="text-xl font-bold mb-1">{t("delete.title")}</h3>
             <p className="text-sm text-muted mb-6">
-              Această acțiune nu poate fi anulată. Toate comentariile și participările vor fi șterse.
+              {t("delete.desc")}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteId(null)}
                 className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-surface-hover transition-all active:scale-95"
               >
-                Anulează
+                {t("delete.cancel")}
               </button>
               <button
                 onClick={confirmDelete}
                 className="flex-1 py-2.5 rounded-xl bg-danger text-white text-sm font-medium hover:bg-danger/80 transition-all active:scale-95"
               >
-                Șterge
+                {t("delete.confirm")}
               </button>
             </div>
           </div>
@@ -757,8 +756,8 @@ export default function Home() {
           <div className="relative bg-surface rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto p-6 sm:p-8 animate-slide-up">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-bold">Propune o activitate</h2>
-                <p className="text-sm text-muted mt-0.5">Completează detaliile mai jos</p>
+                <h2 className="text-2xl font-bold">{t("form.title")}</h2>
+                <p className="text-sm text-muted mt-0.5">{t("form.subtitle")}</p>
               </div>
               <button
                 onClick={() => setShowForm(false)}
